@@ -1,0 +1,92 @@
+title: "User Feedback Survey: [<Community Name>]"
+body:
+  - type: markdown
+    attributes:
+      value: >
+        We value your feedback and would love to hear about your experience with our current web application.
+        Your insights will be instrumental in shaping the new diracx-web client we are building.
+        Please take a moment to answer the questions below.
+
+  - type: textarea
+    id: question-1
+    attributes:
+      label: "1. Describe your overall experience with the current [DIRAC web application](https://github.com/DiracGrid/webAppDIRAC)."
+      description: >
+        Focus on aspects like ease of use, reliability, and speed
+    validations:
+      required: true
+
+  - type: textarea
+    id: question-2
+    attributes:
+      label: "2. What tasks do you primarily use our web application for?"
+      description: >
+        Example: Users monitor their jobs.
+    validations:
+      required: true
+
+  - type: textarea
+    id: question-3
+    attributes:
+      label: "3. What features do you find most useful and why?"
+      description: >
+        Example: The possibility of monitoring my jobs in real-time.
+    validations:
+      required: true
+
+  - type: textarea
+    id: question-4
+    attributes:
+      label: "4. Are there any features or functionalities you find frustrating or difficult to use?"
+      description: >
+        Example: Logs are hard to read.
+    validations:
+      required: true
+
+  - type: textarea
+    id: question-5
+    attributes:
+      label: "5. Have you encountered any bugs or issues while using the application? If so, describe them."
+      description: >
+        Example: Sometimes I see some messages I do not understand popping up in the interface.
+    validations:
+      required: true
+
+  - type: textarea
+    id: question-6
+    attributes:
+      label: "6. Are there any features or functionalities you wish were included in the current web application?"
+      description: >
+        Example: Yes, I would like to group my job by CE type!
+    validations:
+      required: true
+
+  - type: textarea
+    id: question-7
+    attributes:
+      label: "7. How do you feel about the current user interface and design? What changes, if any, would you suggest?"
+    validations:
+      required: true
+
+  - type: textarea
+    id: question-9
+    attributes:
+      label: "9. Have you ever used the DIRAC web application on mobile devices? Would a mobile-friendly version be beneficial for you?"
+      description: "The adoption of OIDC tokens will open up such possibilities"
+    validations:
+      required: true
+
+  - type: textarea
+    id: question-10
+    attributes:
+      label: "10. Is there anything else you would like to share or suggest as we work on the diracx-web application?"
+    validations:
+      required: true
+
+  - type: markdown
+    attributes:
+      value: >
+        Thank you for taking the time to provide your feedback.
+        Your insights are valuable to us as we work on improving the application.
+        We will keep you updated on our progress and look forward to sharing the new version with you.
+
