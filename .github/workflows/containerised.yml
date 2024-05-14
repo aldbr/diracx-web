@@ -28,10 +28,11 @@ jobs:
 
       - name: Build Docker image (dev)
         id: build-dev
+        if: ${{ !startsWith(github.ref, 'refs/tags/') }}
         uses: docker/build-push-action@v5
         with:
           context: .
-          push: ${{ github.event_name == 'push' && github.repository == 'aldbr/diracx-web' && github.ref_name == 'main_FEAT_improve-ci-tags' }}
+          push: ${{ github.event_name == 'push' && github.repository == 'aldbr/diracx-web' && github.ref_name == 'main' }}
           tags: |
             ghcr.io/aldbr/diracx-web/static:dev
           platforms: linux/amd64,linux/arm64
