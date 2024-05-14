@@ -3,11 +3,13 @@
     ".": {
       "changelog-path": "CHANGELOG.md",
       "release-type": "node",
-      "bump-minor-pre-major": false,
-      "bump-patch-for-minor-pre-major": false,
+      "versioning": "prerelease",
+      "bump-minor-pre-major": true,
+      "bump-patch-for-minor-pre-major": true,
       "draft": false,
       "prerelease": true,
-      "prerelease-type": "a"
+      "prerelease-type": "a",
+      "include-v-in-tag": true
     }
   },
   "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json"
