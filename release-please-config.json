@@ -7,6 +7,7 @@
   "draft": false,
   "prerelease": true,
   "include-v-in-tag": true,
+  "include-component-in-tag": false,
   "prerelease-type": "a",
   "packages": {
     ".": {}
