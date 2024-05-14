@@ -1,6 +1,6 @@
 {
   "name": "diracx-web",
-  "version": "0.0.1-a0",
+  "version": "0.0.1-a1",
   "private": true,
   "scripts": {
     "dev": "next dev",
