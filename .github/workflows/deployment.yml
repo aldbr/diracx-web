@@ -10,15 +10,23 @@ jobs:
       contents: write
       pull-requests: write
     outputs:
-      release_created: ${{ steps.release-please.outputs.release_created }}
-      tag_name: ${{ steps.release-please.outputs.tag_name }}
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
     steps:
       - uses: googleapis/release-please-action@v4
+        id: release
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           target-branch: ${{ github.ref_name }}
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
+      - name: Check if release was created
+        env:
+          RELEASE_CREATED: ${{ needs.release-please.outputs.release_created }}
+          TAG_NAME: ${{ needs.release-please.outputs.tag_name }}
+        run: |
+          echo "Release created: ${RELEASE_CREATED}"
+          echo "Tag name: ${TAG_NAME}"
 
   build-deploy-dev-image:
     runs-on: ubuntu-latest
@@ -63,6 +71,14 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check if release was created
+        env:
+          RELEASE_CREATED: ${{ needs.release-please.outputs.release_created }}
+          TAG_NAME: ${{ needs.release-please.outputs.tag_name }}
+        run: |
+          echo "Release created: ${RELEASE_CREATED}"
+          echo "Tag name: ${TAG_NAME}"
 
       - name: Build Docker image
         if: ${{ needs.release-please.outputs.release_created == 'true' }}
