@@ -4,11 +4,10 @@ on:
   push:
     branches-ignore:
       - 'dependabot/**'
+      - 'dependabot/npm_and_yarn/storybook/addon-links-8.2.9'
       - 'release-please-**'
   pull_request:
     branches-ignore:
-      - 'dependabot/**'
-      - 'dependabot/npm_and_yarn/storybook/addon-links-8.2.9'
       - 'release-please-**'
 
 jobs:
