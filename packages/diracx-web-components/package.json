@@ -43,7 +43,7 @@
     "@babel/preset-typescript": "^7.24.7",
     "@chromatic-com/storybook": "^1.5.0",
     "@microsoft/api-extractor": "^7.43.7",
-    "@storybook/addon-essentials": "^8.2.1",
+    "@storybook/addon-essentials": "^8.2.9",
     "@storybook/addon-interactions": "^8.2.1",
     "@storybook/addon-links": "^8.2.1",
     "@storybook/blocks": "^8.2.1",
