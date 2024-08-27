@@ -3,12 +3,12 @@ name: Commit Lint
 on:
   push:
     branches-ignore:
-      - dependabot/**
-      - release-please-**
+      - 'dependabot/**'
+      - 'release-please-**'
   pull_request:
     branches-ignore:
-      - dependabot/**
-      - release-please-**
+      - 'dependabot/**'
+      - 'release-please-**'
 
 jobs:
   commitlint:
