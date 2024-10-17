@@ -5,7 +5,7 @@ import { useApplicationTitle } from "@/hooks/application";
 export interface ApplicationHeaderProps {
   /** The type of the application. */
   type: string;
-  /** The size of the header, default is h4 */
+  /** The size of the header, default is h5 */
   size?: "h1" | "h2" | "h3" | "h4" | "h5" | "h6";
 }
 

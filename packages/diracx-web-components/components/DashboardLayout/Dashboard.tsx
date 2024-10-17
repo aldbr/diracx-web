@@ -41,9 +41,10 @@ export default function Dashboard(props: DashboardProps) {
   const drawerWidth = props.drawerWidth || 240;
 
   return (
-    <Box sx={{ display: "flex" }}>
-      <CssBaseline />
-      <MUIThemeProvider theme={theme}>
+    <MUIThemeProvider theme={theme}>
+      <Box sx={{ display: "flex", height: "100vh" }}>
+        <CssBaseline />
+
         <AppBar
           position="fixed"
           elevation={0}
@@ -104,11 +105,17 @@ export default function Dashboard(props: DashboardProps) {
         </Box>
         <Box
           component="main"
-          sx={{ pt: 7, width: { sm: `calc(100% - ${drawerWidth}px)` } }}
+          sx={{
+            flexGrow: 1,
+            display: "flex",
+            flexDirection: "column",
+            width: { sm: `${drawerWidth}px` },
+          }}
         >
+          <Toolbar />
           {props.children}
         </Box>
-      </MUIThemeProvider>
-    </Box>
+      </Box>
+    </MUIThemeProvider>
   );
 }

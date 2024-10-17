@@ -2,7 +2,7 @@ import React from "react";
 import { FilterList, Delete, Send } from "@mui/icons-material";
 import Chip from "@mui/material/Chip";
 import Button from "@mui/material/Button";
-import { Alert, Popover, Stack, Tooltip } from "@mui/material";
+import { Alert, Box, Popover, Stack, Tooltip } from "@mui/material";
 import { FilterForm } from "./FilterForm";
 import { InternalFilter } from "@/types/Filter";
 import { Column } from "@/types/Column";
@@ -229,10 +229,12 @@ export function FilterToolbar(props: FilterToolbarProps) {
         </Popover>
       </Stack>
       {changesUnapplied() && (
-        <Alert severity="info">
-          Some filter changes have not been applied. Please click on &quot;Apply
-          filters&quot; to update your results.
-        </Alert>
+        <Box marginBottom={1}>
+          <Alert severity="info">
+            Some filter changes have not been applied. Please click on
+            &quot;Apply filters&quot; to update your results.
+          </Alert>
+        </Box>
       )}
     </>
   );

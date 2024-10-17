@@ -337,7 +337,14 @@ export function JobDataTable() {
    */
 
   return (
-    <Box>
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        flexGrow: 1,
+        overflow: "hidden",
+      }}
+    >
       <DataTable<Job>
         title="List of Jobs"
         page={page}

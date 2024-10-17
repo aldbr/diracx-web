@@ -424,7 +424,7 @@ export function DataTable<T extends Record<string, unknown>>(
 
   const VirtuosoTableComponents: TableComponents<T, TableContextProps> = {
     Scroller: React.forwardRef<HTMLDivElement>(function Scroller(props, ref) {
-      return <TableContainer component={Paper} {...props} ref={ref} />;
+      return <TableContainer {...props} ref={ref} />;
     }),
     Table: function VirtuosoTable(props) {
       const { isMobile } = props.context as TableContextProps;
@@ -547,7 +547,14 @@ export function DataTable<T extends Record<string, unknown>>(
   }
 
   return (
-    <Box sx={{ width: "100%" }}>
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        flexGrow: 1,
+        overflow: "hidden",
+      }}
+    >
       <FilterToolbar
         columns={columns}
         filters={filters}
@@ -556,15 +563,23 @@ export function DataTable<T extends Record<string, unknown>>(
         handleApplyFilters={handleApplyFilters}
       />
 
-      <Paper sx={{ width: "100%", mb: 1 }}>
+      <Paper
+        sx={{
+          flexGrow: 1,
+          display: "flex",
+          flexDirection: "column",
+          overflow: "hidden",
+        }}
+      >
         <DataTableToolbar
           title={title}
           numSelected={selected.length}
           selectedIds={selected}
           toolbarComponents={toolbarComponents}
         />
-        <TableContainer sx={{ height: "65vh", width: "100%" }}>
+        <TableContainer sx={{ flexGrow: 1, overflow: "auto" }}>
           <TableVirtuoso<T, TableContextProps>
+            style={{ flexGrow: 1, width: "100%" }}
             data={rows}
             components={VirtuosoTableComponents}
             context={{
