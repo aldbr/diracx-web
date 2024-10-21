@@ -2,6 +2,10 @@ import React from "react";
 import { StoryObj, Meta } from "@storybook/react";
 import { useArgs } from "@storybook/core/preview-api";
 import { ThemeProvider as MUIThemeProvider } from "@mui/material/styles";
+import {
+  AccessorKeyColumnDef,
+  createColumnHelper,
+} from "@tanstack/react-table";
 import { useMUITheme } from "../../hooks/theme";
 import { DataTable } from "./DataTable";
 
@@ -18,15 +22,9 @@ const meta = {
     setPage: { control: false },
     rowsPerPage: { control: "number" },
     setRowsPerPage: { control: false },
-    order: { control: "radio" },
-    setOrder: { control: false },
-    orderBy: { control: "text" },
-    setOrderBy: { control: false },
-    totalRows: { control: "number" },
     selected: { control: "object" },
     setSelected: { control: false },
-    filters: { control: "object" },
-    setFilters: { control: false },
+    searchBody: { control: false },
     setSearchBody: { control: false },
     columns: { control: "object" },
     rows: { control: "object" },
@@ -51,6 +49,34 @@ const meta = {
   ],
 } satisfies Meta<typeof DataTable>;
 
+interface SimpleItem extends Record<string, unknown> {
+  id: number;
+  name: string;
+  email: string;
+  [key: string]: unknown;
+}
+
+const columnHelper = createColumnHelper<SimpleItem>();
+
+const columns: Array<
+  | AccessorKeyColumnDef<Record<string, unknown>, number>
+  | AccessorKeyColumnDef<Record<string, unknown>, string>
+  | AccessorKeyColumnDef<Record<string, unknown>, Date>
+> = [
+  columnHelper.accessor("id", {
+    header: "ID",
+    meta: { type: "number" },
+  }) as AccessorKeyColumnDef<Record<string, unknown>, number>,
+  columnHelper.accessor("name", {
+    header: "Name",
+    meta: { type: "string" },
+  }) as AccessorKeyColumnDef<Record<string, unknown>, string>,
+  columnHelper.accessor("email", {
+    header: "Email",
+    meta: { type: "string" },
+  }) as AccessorKeyColumnDef<Record<string, unknown>, string>,
+];
+
 export default meta;
 type Story = StoryObj<typeof meta>;
 
@@ -68,21 +94,11 @@ export const Default: Story = {
     setPage: () => {},
     rowsPerPage: 25,
     setRowsPerPage: () => {},
-    order: "asc",
-    setOrder: () => {},
-    orderBy: "id",
-    setOrderBy: () => {},
-    totalRows: 1,
     selected: [],
     setSelected: () => {},
-    filters: [],
-    setFilters: () => {},
+    searchBody: { sort: [{ parameter: "id", direction: "asc" }] },
     setSearchBody: () => {},
-    columns: [
-      { id: "id", label: "ID" },
-      { id: "name", label: "Name" },
-      { id: "email", label: "Email" },
-    ],
+    columns: columns,
     rows: [{ id: 1, name: "John Doe", email: "john@example.com" }],
     error: "",
     isValidating: false,
@@ -102,15 +118,6 @@ export const Default: Story = {
       if (typeof newRowsPerPage === "function")
         newRowsPerPage = newRowsPerPage(props.rowsPerPage);
       updateArgs({ rowsPerPage: newRowsPerPage });
-    };
-    props.setOrder = (newOrder) => {
-      if (typeof newOrder === "function") newOrder = newOrder(props.order);
-      updateArgs({ order: newOrder });
-    };
-    props.setOrderBy = (newOrderBy) => {
-      if (typeof newOrderBy === "function")
-        newOrderBy = newOrderBy(props.orderBy);
-      updateArgs({ orderBy: newOrderBy });
     };
     props.setSelected = (newSelected) => {
       if (typeof newSelected === "function")

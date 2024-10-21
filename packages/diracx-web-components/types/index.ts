@@ -1,6 +1,5 @@
 export { type default as ApplicationMetadata } from "./ApplicationMetadata";
 /* eslint-disable import/export */
-export * from "./ColumnMetadata";
 export * from "./Filter";
 export * from "./DashboardGroup";
 export * from "./DashboardItem";

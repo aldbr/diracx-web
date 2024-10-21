@@ -250,7 +250,7 @@ export function FilterForm<T extends Record<string, unknown>>(
             multiple={isMultiple}
             sx={{ minWidth: 100 }}
           >
-            {selectedColumn?.meta?.values?.map((val) => (
+            {selectedColumn?.meta?.values?.map((val: string) => (
               <MenuItem key={val} value={val}>
                 {val}
               </MenuItem>

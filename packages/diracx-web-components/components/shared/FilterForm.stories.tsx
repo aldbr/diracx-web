@@ -2,6 +2,10 @@ import React from "react";
 import { StoryObj, Meta } from "@storybook/react";
 import { ThemeProvider as MUIThemeProvider } from "@mui/material/styles";
 import { Paper } from "@mui/material";
+import {
+  AccessorKeyColumnDef,
+  createColumnHelper,
+} from "@tanstack/react-table";
 import { useMUITheme } from "../../hooks/theme";
 import { FilterForm } from "./FilterForm";
 
@@ -37,14 +41,37 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
+interface SimpleItem extends Record<string, unknown> {
+  id: number;
+  name: string;
+  email: string;
+}
+
+const columnHelper = createColumnHelper<SimpleItem>();
+
+const columns: Array<
+  | AccessorKeyColumnDef<Record<string, unknown>, number>
+  | AccessorKeyColumnDef<Record<string, unknown>, string>
+  | AccessorKeyColumnDef<Record<string, unknown>, Date>
+> = [
+  columnHelper.accessor("id", {
+    header: "ID",
+    meta: { type: "number" },
+  }) as AccessorKeyColumnDef<Record<string, unknown>, number>,
+  columnHelper.accessor("name", {
+    header: "Name",
+    meta: { type: "string" },
+  }) as AccessorKeyColumnDef<Record<string, unknown>, string>,
+  columnHelper.accessor("email", {
+    header: "Email",
+    meta: { type: "string" },
+  }) as AccessorKeyColumnDef<Record<string, unknown>, string>,
+];
+
 export const Default: Story = {
   args: {
-    columns: [
-      { id: "id", label: "ID" },
-      { id: "name", label: "Name" },
-      { id: "age", label: "Age" },
-    ],
-    filters: [{ id: 0, column: "id", operator: "eq", value: "1" }],
+    columns: columns,
+    filters: [{ id: 0, parameter: "id", operator: "eq", value: "1" }],
     setFilters: () => {},
     handleFilterChange: () => {},
     handleFilterMenuClose: () => {},

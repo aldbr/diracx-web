@@ -41,7 +41,6 @@ import {
   rescheduleJobs,
   useJobs,
 } from "./JobDataService";
-import { InternalFilter } from "@/types/Filter";
 import { JobHistory } from "@/types/JobHistory";
 import { Job, SearchBody } from "@/types";
 
@@ -129,8 +128,6 @@ const headCells: Array<
   }) as AccessorKeyColumnDef<Job, Date>,
 ];
 
-type Order = "asc" | "desc";
-
 /**
  * The data grid for the jobs
  */
@@ -147,16 +144,13 @@ export function JobDataTable() {
     message: "",
     severity: "success",
   });
-  // State for sorting
-  const [order, setOrder] = React.useState<Order>("asc");
-  const [orderBy, setOrderBy] = React.useState<string | number>("JobID");
   // State for pagination
   const [page, setPage] = React.useState(0);
   const [rowsPerPage, setRowsPerPage] = React.useState(25);
-  // State for filters
-  const [filters, setFilters] = React.useState<InternalFilter[]>([]);
   // State for search body
-  const [searchBody, setSearchBody] = React.useState<SearchBody>({});
+  const [searchBody, setSearchBody] = React.useState<SearchBody>({
+    sort: [{ parameter: "JobID", direction: "asc" }],
+  });
   // State for job history
   const [isHistoryDialogOpen, setIsHistoryDialogOpen] = React.useState(false);
   const [jobHistoryData, setJobHistoryData] = React.useState<JobHistory[]>([]);
@@ -171,23 +165,8 @@ export function JobDataTable() {
     rowsPerPage,
   );
 
-  const dataHeader = data?.headers;
   const results = data?.data || [];
 
-  // Parse the headers to get the first item, last item and number of items
-  const contentRange = dataHeader?.get("content-range");
-  let totalJobs = 0;
-
-  if (contentRange) {
-    const match = contentRange.match(/jobs (\d+)-(\d+)\/(\d+)/);
-    if (match) {
-      totalJobs = parseInt(match[3]);
-    }
-  } else if (results) {
-    totalJobs = results.length;
-  }
-
-  const columns = headCells;
   const clearSelected = () => setSelected([]);
 
   /**
@@ -364,17 +343,11 @@ export function JobDataTable() {
         setPage={setPage}
         rowsPerPage={rowsPerPage}
         setRowsPerPage={setRowsPerPage}
-        order={order}
-        setOrder={setOrder}
-        orderBy={orderBy}
-        setOrderBy={setOrderBy}
-        totalRows={totalJobs}
         selected={selected}
         setSelected={setSelected}
-        filters={filters}
-        setFilters={setFilters}
+        searchBody={searchBody}
         setSearchBody={setSearchBody}
-        columns={columns}
+        columns={headCells}
         rows={results}
         error={error}
         isLoading={isLoading}

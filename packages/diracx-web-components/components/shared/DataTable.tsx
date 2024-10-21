@@ -126,7 +126,7 @@ function DataTableToolbar(props: DataTableToolbarProps) {
             open={snackbarOpen}
             autoHideDuration={6000}
             onClose={() => setSnackbarOpen(false)}
-            message="Job IDs copied to clipboard"
+            message="IDs copied to clipboard"
           />
           {toolbarComponents}
         </Stack>
@@ -146,8 +146,6 @@ function DataTableToolbar(props: DataTableToolbarProps) {
  * @property {function} setRowsPerPage - the function to call when the rows per page change
  * @property {number[]} selected - the selected rows
  * @property {function} setSelected - the function to call when the selected rows change
- * @property {Filter[]} filters - the filters to apply
- * @property {function} setFilters - the function to call when the filters change
  * @property {function} setSearchBody - the function to call when the search body changes
  * @property {AccessorKeyColumnDef[]} columns - the columns of the table
  * @property {T[]} rows - the rows of the table
@@ -168,24 +166,12 @@ interface DataTableProps<T extends Record<string, unknown>> {
   rowsPerPage: number;
   /** The function to call when the rows per page change */
   setRowsPerPage: React.Dispatch<React.SetStateAction<number>>;
-  /** The order of the table, either "asc" or "desc" */
-  order: "asc" | "desc";
-  /** The function to call when the order changes */
-  setOrder: React.Dispatch<React.SetStateAction<"asc" | "desc">>;
-  /** The column to order by */
-  orderBy: string | number;
-  /** The function to call when the order by changes */
-  setOrderBy: React.Dispatch<React.SetStateAction<string | number>>;
-  /** The total number of rows */
-  totalRows: number;
   /** The selected rows */
   selected: readonly number[];
   /** The function to call when the selected rows change */
   setSelected: React.Dispatch<React.SetStateAction<readonly number[]>>;
-  /** The filters to apply */
-  filters: InternalFilter[];
-  /** The function to call when the filters change */
-  setFilters: React.Dispatch<React.SetStateAction<InternalFilter[]>>;
+  /** The search body to send along with the request */
+  searchBody: SearchBody;
   /** The function to call when the search body changes */
   setSearchBody: React.Dispatch<React.SetStateAction<SearchBody>>;
   /** The columns of the table */
@@ -226,15 +212,9 @@ export function DataTable<T extends Record<string, unknown>>(
     setPage,
     rowsPerPage,
     setRowsPerPage,
-    order,
-    setOrder,
-    orderBy,
-    setOrderBy,
-    totalRows,
     selected,
     setSelected,
-    filters,
-    setFilters,
+    searchBody,
     setSearchBody,
     columns,
     rows,
@@ -255,6 +235,8 @@ export function DataTable<T extends Record<string, unknown>>(
   const { getParam, setParam } = useSearchParamsUtils();
   const appId = getParam("appId");
 
+  // State for filters
+  const [filters, setFilters] = React.useState<InternalFilter[]>([]);
   const [appliedFilters, setAppliedFilters] =
     React.useState<InternalFilter[]>(filters);
 
@@ -348,9 +330,10 @@ export function DataTable<T extends Record<string, unknown>>(
     _event: React.MouseEvent<unknown>,
     property: string,
   ) => {
-    const isAsc = orderBy === property && order === "asc";
-    setOrder(isAsc ? "desc" : "asc");
-    setOrderBy(property);
+    const isAsc =
+      searchBody.sort &&
+      searchBody.sort[0]?.parameter === property &&
+      searchBody.sort[0]?.direction === "asc";
     setSearchBody((prevState: SearchBody) => ({
       ...prevState,
       sort: [{ parameter: property, direction: isAsc ? "desc" : "asc" }],
@@ -559,7 +542,7 @@ export function DataTable<T extends Record<string, unknown>>(
         />
         <TableContainer sx={{ flexGrow: 1, overflow: "auto" }}>
           <TableVirtuoso<T, TableContextProps>
-            style={{ flexGrow: 1, width: "100%" }}
+            style={{ flexGrow: 1, width: "100%", minHeight: "100px" }}
             data={rows}
             components={VirtuosoTableComponents}
             context={{
@@ -593,8 +576,16 @@ export function DataTable<T extends Record<string, unknown>>(
                       }}
                     >
                       <TableSortLabel
-                        active={orderBy === header.id}
-                        direction={order === "asc" ? "asc" : "desc"}
+                        active={
+                          searchBody.sort &&
+                          searchBody.sort[0]?.parameter === header.id
+                        }
+                        direction={
+                          searchBody.sort &&
+                          searchBody.sort[0]?.direction === "asc"
+                            ? "asc"
+                            : "desc"
+                        }
                         onClick={(event) => handleRequestSort(event, header.id)}
                       >
                         {flexRender(
@@ -668,7 +659,7 @@ export function DataTable<T extends Record<string, unknown>>(
         <TablePagination
           rowsPerPageOptions={[25, 50, 100, 500, 1000]}
           component="div"
-          count={totalRows}
+          count={rows.length}
           showFirstButton
           showLastButton
           rowsPerPage={rowsPerPage}

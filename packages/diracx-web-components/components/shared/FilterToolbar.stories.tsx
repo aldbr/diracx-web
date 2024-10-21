@@ -3,6 +3,10 @@ import { StoryObj, Meta } from "@storybook/react";
 import { useArgs } from "@storybook/core/preview-api";
 import { ThemeProvider as MUIThemeProvider } from "@mui/material/styles";
 import { Paper } from "@mui/material";
+import {
+  AccessorKeyColumnDef,
+  createColumnHelper,
+} from "@tanstack/react-table";
 import { useMUITheme } from "../../hooks/theme";
 import { FilterToolbar } from "./FilterToolbar";
 
@@ -33,23 +37,45 @@ const meta = {
   ],
 } satisfies Meta<typeof FilterToolbar>;
 
+interface SimpleItem extends Record<string, unknown> {
+  id: number;
+  name: string;
+  email: string;
+}
+
+const columnHelper = createColumnHelper<SimpleItem>();
+const columns: Array<
+  | AccessorKeyColumnDef<Record<string, unknown>, number>
+  | AccessorKeyColumnDef<Record<string, unknown>, string>
+  | AccessorKeyColumnDef<Record<string, unknown>, Date>
+> = [
+  columnHelper.accessor("id", {
+    header: "ID",
+    meta: { type: "number" },
+  }) as AccessorKeyColumnDef<Record<string, unknown>, number>,
+  columnHelper.accessor("name", {
+    header: "Name",
+    meta: { type: "string" },
+  }) as AccessorKeyColumnDef<Record<string, unknown>, string>,
+  columnHelper.accessor("email", {
+    header: "Email",
+    meta: { type: "string" },
+  }) as AccessorKeyColumnDef<Record<string, unknown>, string>,
+];
+
 export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   args: {
-    columns: [
-      { id: "id", label: "ID" },
-      { id: "name", label: "Name" },
-      { id: "age", label: "Age" },
-    ],
+    columns: columns,
     filters: [
-      { id: 0, column: "id", operator: "eq", value: "1" },
-      { id: 1, column: "id", operator: "neq", value: "2" },
+      { id: 0, parameter: "id", operator: "eq", value: "1" },
+      { id: 1, parameter: "id", operator: "neq", value: "2" },
     ],
     setFilters: () => {},
     handleApplyFilters: () => {},
-    appliedFilters: [{ id: 0, column: "id", operator: "eq", value: "1" }],
+    appliedFilters: [{ id: 0, parameter: "id", operator: "eq", value: "1" }],
   },
   render: (props) => {
     const [{ filters }, updateArgs] = useArgs();

@@ -45,12 +45,12 @@ export default function DashboardLayout({
           <Dashboard logoURL={customLogoURL} drawerWidth={250}>
             <Box
               sx={{
-                ml: '1%',
-                mr: '1%',
-                display: 'flex',
-                flexDirection: 'column',
+                ml: "1%",
+                mr: "1%",
+                display: "flex",
+                flexDirection: "column",
                 flexGrow: 1,
-                overflow: 'hidden',
+                overflow: "hidden",
               }}
             >
               {children}
