@@ -3,18 +3,22 @@ import { FilterList, Delete, Send } from "@mui/icons-material";
 import Chip from "@mui/material/Chip";
 import Button from "@mui/material/Button";
 import { Alert, Box, Popover, Stack, Tooltip } from "@mui/material";
+import { AccessorKeyColumnDef } from "@tanstack/react-table";
 import { FilterForm } from "./FilterForm";
 import { InternalFilter } from "@/types/Filter";
-import { Column } from "@/types/Column";
 import "@/hooks/theme";
 
 /**
  * Filter toolbar component
  * @param {FilterToolbarProps} props - the props for the component
  */
-interface FilterToolbarProps {
+interface FilterToolbarProps<T extends Record<string, unknown>> {
   /** The columns of the data table */
-  columns: Column[];
+  columns: Array<
+    | AccessorKeyColumnDef<T, number>
+    | AccessorKeyColumnDef<T, string>
+    | AccessorKeyColumnDef<T, Date>
+  >;
   /** The filters to apply */
   filters: InternalFilter[];
   /** The function to set the filters */
@@ -30,7 +34,9 @@ interface FilterToolbarProps {
  *
  * @returns a FilterToolbar component
  */
-export function FilterToolbar(props: FilterToolbarProps) {
+export function FilterToolbar<T extends Record<string, unknown>>(
+  props: FilterToolbarProps<T>,
+) {
   const { columns, filters, setFilters, appliedFilters, handleApplyFilters } =
     props;
   const [anchorEl, setAnchorEl] = React.useState<HTMLElement | null>(null);

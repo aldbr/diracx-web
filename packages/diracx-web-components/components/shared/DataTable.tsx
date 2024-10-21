@@ -12,7 +12,6 @@ import TableRow from "@mui/material/TableRow";
 import TableSortLabel from "@mui/material/TableSortLabel";
 import Paper from "@mui/material/Paper";
 import Checkbox from "@mui/material/Checkbox";
-import { visuallyHidden } from "@mui/utils";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 import Tooltip from "@mui/material/Tooltip";
@@ -28,9 +27,15 @@ import {
 } from "@mui/material";
 import { cyan } from "@mui/material/colors";
 import { TableComponents, TableVirtuoso } from "react-virtuoso";
+import {
+  AccessorKeyColumnDef,
+  Cell,
+  flexRender,
+  getCoreRowModel,
+  useReactTable,
+} from "@tanstack/react-table";
 import { FilterToolbar } from "./FilterToolbar";
 import { InternalFilter } from "@/types/Filter";
-import { Column } from "@/types/Column";
 import { useSearchParamsUtils } from "@/hooks/searchParamsUtils";
 import { ApplicationsContext } from "@/contexts/ApplicationsProvider";
 import { DashboardGroup, SearchBody } from "@/types";
@@ -144,7 +149,7 @@ function DataTableToolbar(props: DataTableToolbarProps) {
  * @property {Filter[]} filters - the filters to apply
  * @property {function} setFilters - the function to call when the filters change
  * @property {function} setSearchBody - the function to call when the search body changes
- * @property {Column[]} columns - the columns of the table
+ * @property {AccessorKeyColumnDef[]} columns - the columns of the table
  * @property {T[]} rows - the rows of the table
  * @property {string | null} error - the error message
  * @property {string} rowIdentifier - the identifier for the rows
@@ -184,7 +189,11 @@ interface DataTableProps<T extends Record<string, unknown>> {
   /** The function to call when the search body changes */
   setSearchBody: React.Dispatch<React.SetStateAction<SearchBody>>;
   /** The columns of the table */
-  columns: Column[];
+  columns: Array<
+    | AccessorKeyColumnDef<T, number>
+    | AccessorKeyColumnDef<T, string>
+    | AccessorKeyColumnDef<T, Date>
+  >;
   /** The rows of the table */
   rows: T[];
   /** The error message */
@@ -336,7 +345,7 @@ export function DataTable<T extends Record<string, unknown>>(
 
   // Manage sorting
   const handleRequestSort = (
-    event: React.MouseEvent<unknown>,
+    _event: React.MouseEvent<unknown>,
     property: string,
   ) => {
     const isAsc = orderBy === property && order === "asc";
@@ -358,7 +367,7 @@ export function DataTable<T extends Record<string, unknown>>(
     setSelected([]);
   };
 
-  const handleClick = (event: React.MouseEvent<unknown>, id: number) => {
+  const handleClick = (_event: React.MouseEvent<unknown>, id: number) => {
     const selectedIndex = selected.indexOf(id);
     let newSelected: readonly number[] = [];
 
@@ -379,7 +388,7 @@ export function DataTable<T extends Record<string, unknown>>(
   };
 
   // Manage pagination
-  const handleChangePage = (event: unknown, newPage: number) => {
+  const handleChangePage = (_event: unknown, newPage: number) => {
     setPage(newPage);
   };
 
@@ -406,6 +415,15 @@ export function DataTable<T extends Record<string, unknown>>(
     setContextMenu({ mouseX: null, mouseY: null, id: null });
   };
 
+  // TanStack table components: https://tanstack.com/
+  const table = useReactTable({
+    data: rows,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+    enableColumnResizing: true,
+    columnResizeMode: "onChange",
+  });
+
   // Virtuoso table components: https://virtuoso.dev/
   // Used to render large tables with virtualization, which improves performance
   interface TableContextProps {
@@ -416,68 +434,30 @@ export function DataTable<T extends Record<string, unknown>>(
     isMobile: boolean;
   }
 
-  interface TableRowProps {
-    item: T;
-    context?: TableContextProps;
-    "data-index"?: number;
-  }
-
   const VirtuosoTableComponents: TableComponents<T, TableContextProps> = {
     Scroller: React.forwardRef<HTMLDivElement>(function Scroller(props, ref) {
       return <TableContainer {...props} ref={ref} />;
     }),
-    Table: function VirtuosoTable(props) {
-      const { isMobile } = props.context as TableContextProps;
-      return (
-        <Table
-          {...props}
-          sx={{
-            borderCollapse: "separate",
-            tableLayout: "fixed",
-            minWidth: isMobile ? "undefined" : "50vw",
-          }}
-          aria-labelledby="tableTitle"
-          size={"small"}
-        />
-      );
-    },
+    Table: (props) => (
+      <Table
+        {...props}
+        sx={{
+          borderCollapse: "separate",
+          tableLayout: "fixed",
+          minWidth: "100%",
+        }}
+        aria-labelledby="tableTitle"
+        size="small"
+      />
+    ),
     TableHead: React.forwardRef<HTMLTableSectionElement>(
-      function VirtuosoTableHead(props, ref) {
+      function TableHeadRef(props, ref) {
         return <TableHead {...props} ref={ref} />;
       },
     ),
-    TableRow: function VirtuosoTableRow(props: TableRowProps) {
-      const { item, context } = props;
-
-      if (!context) {
-        return <TableRow {...props} />;
-      }
-
-      const { rowIdentifier, handleClick, handleContextMenu, isSelected } =
-        context || {};
-
-      const itemId = item[rowIdentifier];
-      if (typeof itemId !== "number") {
-        return <TableRow {...props} />;
-      }
-
-      return (
-        <TableRow
-          {...props}
-          hover
-          onClick={(event) => handleClick(event, itemId)}
-          role="checkbox"
-          aria-checked={isSelected(itemId)}
-          tabIndex={-1}
-          key={itemId}
-          selected={isSelected(itemId)}
-          onContextMenu={(event) => handleContextMenu(event, itemId)}
-          style={{ cursor: "context-menu" }}
-        />
-      );
-    },
+    TableRow: (props) => <TableRow {...props} />,
     TableBody: React.forwardRef<HTMLTableSectionElement>(
-      function VirtuosoTableBody(props, ref) {
+      function TableBodyRef(props, ref) {
         return <TableBody {...props} ref={ref} />;
       },
     ),
@@ -589,53 +569,63 @@ export function DataTable<T extends Record<string, unknown>>(
               isSelected,
               isMobile,
             }}
-            fixedHeaderContent={() => {
-              const createSortHandler =
-                (property: string) => (event: React.MouseEvent<unknown>) => {
-                  handleRequestSort(event, property);
-                };
-
-              return (
-                <TableRow>
-                  <TableCell padding="checkbox">
-                    <Checkbox
-                      color="primary"
-                      indeterminate={
-                        selected.length > 0 && selected.length < rows.length
-                      }
-                      checked={
-                        rows.length > 0 && selected.length === rows.length
-                      }
-                      onChange={handleSelectAllClick}
-                      inputProps={{ "aria-label": "select all items" }}
-                    />
-                  </TableCell>
-                  {columns.map((headCell) => (
+            fixedHeaderContent={() => (
+              <TableRow>
+                <TableCell padding="checkbox">
+                  <Checkbox
+                    color="primary"
+                    indeterminate={
+                      selected.length > 0 && selected.length < rows.length
+                    }
+                    checked={rows.length > 0 && selected.length === rows.length}
+                    onChange={handleSelectAllClick}
+                    inputProps={{ "aria-label": "select all items" }}
+                  />
+                </TableCell>
+                {table.getHeaderGroups().map((headerGroup) =>
+                  headerGroup.headers.map((header) => (
                     <TableCell
-                      key={String(headCell.id)}
-                      sortDirection={orderBy === headCell.id ? order : false}
+                      key={header.id}
+                      style={{
+                        width: header.getSize(),
+                        flexGrow: 1,
+                        position: "relative",
+                      }}
                     >
                       <TableSortLabel
-                        active={orderBy === headCell.id}
-                        direction={orderBy === headCell.id ? order : "asc"}
-                        onClick={createSortHandler(String(headCell.id))}
+                        active={orderBy === header.id}
+                        direction={order === "asc" ? "asc" : "desc"}
+                        onClick={(event) => handleRequestSort(event, header.id)}
                       >
-                        {headCell.label}
-                        {orderBy === headCell.id ? (
-                          <Box component="span" sx={visuallyHidden}>
-                            {order === "desc"
-                              ? "sorted descending"
-                              : "sorted ascending"}
-                          </Box>
-                        ) : null}
+                        {flexRender(
+                          header.column.columnDef.header,
+                          header.getContext(),
+                        )}
                       </TableSortLabel>
+                      {header.column.getCanResize() && (
+                        <Box
+                          sx={{
+                            position: "absolute",
+                            right: 0,
+                            top: 0,
+                            height: "100%",
+                            width: "5px",
+                            zIndex: 1,
+                            cursor: "col-resize",
+                          }}
+                          onMouseDown={header.getResizeHandler()}
+                          onTouchStart={header.getResizeHandler()}
+                        />
+                      )}
                     </TableCell>
-                  ))}
-                </TableRow>
-              );
-            }}
-            itemContent={(index: number, row: T) => {
-              const isItemSelected = isSelected(row[rowIdentifier] as number);
+                  )),
+                )}
+              </TableRow>
+            )}
+            itemContent={(index: number, rowData: T) => {
+              const row = table.getRowModel().rows[index];
+              const itemId = rowData[rowIdentifier] as number;
+              const isItemSelected = isSelected(itemId);
               const labelId = `enhanced-table-checkbox-${index}`;
 
               return (
@@ -645,18 +635,31 @@ export function DataTable<T extends Record<string, unknown>>(
                       color="primary"
                       checked={isItemSelected}
                       inputProps={{ "aria-labelledby": labelId }}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        handleClick(event, itemId);
+                      }}
                     />
                   </TableCell>
-                  {columns.map((column) => {
-                    const cellValue = row[column.id];
-                    return (
-                      <TableCell key={String(column.id)}>
-                        {column.render
-                          ? column.render(cellValue)
-                          : String(cellValue)}
-                      </TableCell>
-                    );
-                  })}
+                  {row.getVisibleCells().map((cell: Cell<T, unknown>) => (
+                    <TableCell
+                      key={cell.id}
+                      onContextMenu={(event) =>
+                        handleContextMenu(event, itemId)
+                      }
+                      style={{
+                        width: cell.column.getSize(),
+                        minWidth: 50,
+                        maxWidth: 200,
+                        cursor: "context-menu",
+                      }}
+                    >
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext(),
+                      )}
+                    </TableCell>
+                  ))}
                 </>
               );
             }}

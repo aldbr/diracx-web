@@ -26,6 +26,10 @@ import {
 } from "@mui/material";
 import { useOidcAccessToken } from "@axa-fr/react-oidc";
 import { Delete, Clear, Replay } from "@mui/icons-material";
+import {
+  createColumnHelper,
+  AccessorKeyColumnDef,
+} from "@tanstack/react-table";
 import { useOIDCContext } from "../../hooks/oidcConfiguration";
 import { DataTable, MenuItem } from "../shared/DataTable";
 import { JobHistoryDialog } from "./JobHistoryDialog";
@@ -37,7 +41,6 @@ import {
   rescheduleJobs,
   useJobs,
 } from "./JobDataService";
-import { Column } from "@/types/Column";
 import { InternalFilter } from "@/types/Filter";
 import { JobHistory } from "@/types/JobHistory";
 import { Job, SearchBody } from "@/types";
@@ -83,37 +86,47 @@ const renderStatusCell = (status: unknown) => {
   );
 };
 
+const columnHelper = createColumnHelper<Job>();
+
 /**
  * The head cells for the data grid (desktop version)
  */
-const headCells: Column[] = [
-  { id: "JobID", label: "Job ID", type: "number" },
-  { id: "JobName", label: "Job Name" },
-  { id: "Site", label: "Site" },
-  {
-    id: "Status",
-    label: "Status",
-    render: renderStatusCell,
-    type: Object.keys(statusColors).sort(),
-  },
-  {
-    id: "MinorStatus",
-    label: "Minor Status",
-  },
-  {
-    id: "SubmissionTime",
-    label: "Submission Time",
-    type: "DateTime",
-  },
-];
-
-/**
- * The head cells for the data grid (mobile version)
- */
-const mobileHeadCells: Column[] = [
-  { id: "JobID", label: "Job ID" },
-  { id: "JobName", label: "Job Name" },
-  { id: "Status", label: "Status", render: renderStatusCell },
+const headCells: Array<
+  | AccessorKeyColumnDef<Job, number>
+  | AccessorKeyColumnDef<Job, string>
+  | AccessorKeyColumnDef<Job, Date>
+> = [
+  columnHelper.accessor("JobID", {
+    header: "ID",
+    minSize: 50,
+    size: 50,
+    maxSize: 75,
+    meta: { type: "number" },
+  }) as AccessorKeyColumnDef<Job, number>,
+  columnHelper.accessor("JobName", {
+    header: "Name",
+  }) as AccessorKeyColumnDef<Job, string>,
+  columnHelper.accessor("Site", {
+    header: "Site",
+    minSize: 100,
+    size: 100,
+    maxSize: 150,
+  }) as AccessorKeyColumnDef<Job, string>,
+  columnHelper.accessor("Status", {
+    header: "Status",
+    minSize: 125,
+    size: 125,
+    maxSize: 125,
+    cell: (info) => renderStatusCell(info.getValue()),
+    meta: { type: "category", values: Object.keys(statusColors).sort() },
+  }) as AccessorKeyColumnDef<Job, string>,
+  columnHelper.accessor("MinorStatus", {
+    header: "Minor Status",
+  }) as AccessorKeyColumnDef<Job, string>,
+  columnHelper.accessor("SubmissionTime", {
+    header: "Submission Time",
+    meta: { type: "date" },
+  }) as AccessorKeyColumnDef<Job, Date>,
 ];
 
 type Order = "asc" | "desc";
@@ -174,7 +187,7 @@ export function JobDataTable() {
     totalJobs = results.length;
   }
 
-  const columns = isMobile ? mobileHeadCells : headCells;
+  const columns = headCells;
   const clearSelected = () => setSelected([]);
 
   /**

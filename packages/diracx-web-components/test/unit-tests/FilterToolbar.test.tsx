@@ -1,22 +1,46 @@
 import React from "react";
 import { render, screen, fireEvent, cleanup } from "@testing-library/react";
 import { ThemeProvider as MUIThemeProvider } from "@mui/material";
+import {
+  AccessorKeyColumnDef,
+  createColumnHelper,
+} from "@tanstack/react-table";
 import { FilterToolbar } from "@/components/shared/FilterToolbar";
 import { ThemeProvider } from "@/contexts/ThemeProvider";
 import { useMUITheme } from "@/hooks/theme";
 
+interface SimpleItem extends Record<string, unknown> {
+  id: number;
+  name: string;
+  description: string;
+}
+
 describe("FilterToolbar", () => {
-  const columns = [
-    { id: "column1", label: "Column 1" },
-    { id: "column2", label: "Column 2" },
-    { id: "column3", label: "Column 3" },
+  const columnHelper = createColumnHelper<SimpleItem>();
+
+  const columns: Array<
+    | AccessorKeyColumnDef<SimpleItem, string>
+    | AccessorKeyColumnDef<SimpleItem, number>
+  > = [
+    columnHelper.accessor("id", {
+      header: "ID",
+      meta: { type: "number" },
+    }) as AccessorKeyColumnDef<SimpleItem, number>,
+    columnHelper.accessor("name", {
+      header: "Name",
+      meta: { type: "string" },
+    }) as AccessorKeyColumnDef<SimpleItem, string>,
+    columnHelper.accessor("description", {
+      header: "Description",
+      meta: { type: "string" },
+    }) as AccessorKeyColumnDef<SimpleItem, string>,
   ];
   const filters = [
-    { id: 1, parameter: "column1", operator: "eq", value: "value1" },
-    { id: 2, parameter: "column2", operator: "neq", value: "value2" },
+    { id: 1, parameter: "id", operator: "eq", value: "value1" },
+    { id: 2, parameter: "name", operator: "neq", value: "value2" },
   ];
   const appliedFilters = [
-    { id: 1, parameter: "column1", operator: "eq", value: "value1" },
+    { id: 1, parameter: "id", operator: "eq", value: "value1" },
   ];
   const setFilters = jest.fn();
   const handleApplyFilters = jest.fn();
@@ -25,7 +49,7 @@ describe("FilterToolbar", () => {
     render(
       <ThemeProvider>
         <MUIProviders>
-          <FilterToolbar
+          <FilterToolbar<SimpleItem>
             columns={columns}
             filters={filters}
             setFilters={setFilters}
@@ -48,8 +72,8 @@ describe("FilterToolbar", () => {
   });
 
   it("renders the chip with chipColor when the filter is applied", () => {
-    const chipApplied = screen.getByText("column1 eq value1").closest("div");
-    const chipUnapplied = screen.getByText("column2 neq value2").closest("div");
+    const chipApplied = screen.getByText("id eq value1").closest("div");
+    const chipUnapplied = screen.getByText("name neq value2").closest("div");
 
     expect(chipApplied).toHaveClass("MuiChip-colorChipColor");
     expect(chipUnapplied).not.toHaveClass("MuiChip-colorChipColor");
@@ -64,7 +88,7 @@ describe("FilterToolbar", () => {
 
     appliedFilters.push({
       id: 2,
-      parameter: "column2",
+      parameter: "name",
       operator: "neq",
       value: "value2",
     });
