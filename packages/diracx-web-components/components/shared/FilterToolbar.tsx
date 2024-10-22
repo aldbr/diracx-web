@@ -1,5 +1,5 @@
 import React from "react";
-import { FilterList, Delete, Send } from "@mui/icons-material";
+import { FilterList, Delete, Send, Refresh } from "@mui/icons-material";
 import Chip from "@mui/material/Chip";
 import Button from "@mui/material/Button";
 import { Alert, Box, Popover, Stack, Tooltip } from "@mui/material";
@@ -175,11 +175,12 @@ export function FilterToolbar<T extends Record<string, unknown>>(
           <span>
             <Button
               variant="text"
-              startIcon={<Send />}
+              startIcon={changesUnapplied() ? <Send /> : <Refresh />}
               onClick={() => handleApplyFilters()}
-              disabled={!changesUnapplied()}
             >
-              <span>Apply filters</span>
+              <span>
+                {changesUnapplied() ? "Apply filters" : "Refresh page"}
+              </span>
             </Button>
           </span>
         </Tooltip>

@@ -1,17 +1,13 @@
 import React from "react";
-import { CheckCircle } from "@mui/icons-material";
 import {
-  Box,
+  Button,
   FormControl,
-  IconButton,
   InputLabel,
   MenuItem,
   Select,
   SelectChangeEvent,
   Stack,
   TextField,
-  Tooltip,
-  Typography,
 } from "@mui/material";
 import { DateTimePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
@@ -153,7 +149,7 @@ export function FilterForm<T extends Record<string, unknown>>(
   const operators = operatorOptions[operatorType];
 
   const operatorSelector = (
-    <FormControl variant="outlined">
+    <FormControl fullWidth variant="outlined" sx={{ margin: 1 }}>
       <InputLabel id="operator">Operator</InputLabel>
       <Select
         value={tempFilter.operator}
@@ -206,7 +202,7 @@ export function FilterForm<T extends Record<string, unknown>>(
             dateAdapter={AdapterDayjs}
             adapterLocale={"en-gb"}
           >
-            <FormControl variant="outlined">
+            <FormControl fullWidth variant="outlined" sx={{ margin: 1 }}>
               <DateTimePicker
                 label="Value"
                 value={dayjs(tempFilter.value)}
@@ -218,7 +214,7 @@ export function FilterForm<T extends Record<string, unknown>>(
         );
       } else {
         return (
-          <FormControl variant="outlined">
+          <FormControl fullWidth variant="outlined" sx={{ margin: 1 }}>
             <InputLabel id="value">Value</InputLabel>
             <Select
               label="Value"
@@ -240,7 +236,7 @@ export function FilterForm<T extends Record<string, unknown>>(
 
     if (isCategory && tempFilter.operator !== "like") {
       return (
-        <FormControl variant="outlined">
+        <FormControl fullWidth variant="outlined" sx={{ margin: 1 }}>
           <InputLabel id="value">Value</InputLabel>
           <Select
             label="Value"
@@ -263,7 +259,7 @@ export function FilterForm<T extends Record<string, unknown>>(
     if (isNumber) {
       if (!["in", "not in", "like"].includes(tempFilter.operator)) {
         return (
-          <FormControl variant="outlined">
+          <FormControl fullWidth variant="outlined" sx={{ margin: 1 }}>
             <TextField
               id="value"
               variant="outlined"
@@ -276,7 +272,7 @@ export function FilterForm<T extends Record<string, unknown>>(
         );
       } else if (isMultiple) {
         return (
-          <FormControl variant="outlined">
+          <FormControl fullWidth variant="outlined" sx={{ margin: 1 }}>
             <TextField
               id="value"
               variant="outlined"
@@ -290,7 +286,7 @@ export function FilterForm<T extends Record<string, unknown>>(
     }
 
     return (
-      <FormControl variant="outlined">
+      <FormControl fullWidth variant="outlined" sx={{ margin: 1 }}>
         <TextField
           id="value"
           variant="outlined"
@@ -303,62 +299,55 @@ export function FilterForm<T extends Record<string, unknown>>(
   };
 
   return (
-    <Box sx={{ p: 2 }}>
-      <Stack spacing={2} alignItems="flex-start">
-        <Typography variant="h6" padding={1}>
-          Edit Filter
-        </Typography>
-        <Stack direction="row" spacing={2}>
-          <FormControl variant="outlined">
-            <InputLabel id="parameter">Parameter</InputLabel>
-            <Select
-              value={tempFilter.parameter}
-              onChange={(e) => {
-                const parameter = e.target.value;
-                onChange("parameter", parameter);
+    <Stack spacing={2} sx={{ width: "100%", padding: 1 }}>
+      <FormControl fullWidth variant="outlined">
+        <InputLabel id="parameter">Parameter</InputLabel>
+        <Select
+          value={tempFilter.parameter}
+          onChange={(e) => {
+            const parameter = e.target.value;
+            onChange("parameter", parameter);
 
-                const column = columns.find((v) => v.accessorKey === parameter);
-                const colType = column?.meta?.type || "default";
-                const typeKey =
-                  colType === "date"
-                    ? "date"
-                    : Array.isArray(colType)
-                      ? "category"
-                      : colType === "number"
-                        ? "number"
-                        : "default";
+            const column = columns.find((v) => v.accessorKey === parameter);
+            const colType = column?.meta?.type || "default";
+            const typeKey =
+              colType === "date"
+                ? "date"
+                : Array.isArray(colType)
+                  ? "category"
+                  : colType === "number"
+                    ? "number"
+                    : "default";
 
-                const defaultOp = defaultOperators[typeKey];
-                onChange("operator", defaultOp);
-                onChange("value", "");
-              }}
-              label="Parameter"
-              labelId="parameter"
-              data-testid="filter-form-select-parameter"
-              sx={{ minWidth: 120 }}
+            const defaultOp = defaultOperators[typeKey];
+            onChange("operator", defaultOp);
+            onChange("value", "");
+          }}
+          label="Parameter"
+          labelId="parameter"
+        >
+          {columns.map((column) => (
+            <MenuItem
+              key={column.accessorKey.toString()}
+              value={column.accessorKey as string | number}
             >
-              {columns.map((column) => (
-                <MenuItem
-                  key={column.accessorKey.toString()}
-                  value={column.accessorKey as string | number}
-                >
-                  {column.header?.toString()}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+              {column.header?.toString()}
+            </MenuItem>
+          ))}
+        </Select>
+      </FormControl>
 
-          {operatorSelector}
+      {operatorSelector}
 
-          {valueSelector()}
+      {valueSelector()}
 
-          <Tooltip title="Finish editing filter">
-            <IconButton onClick={() => applyChanges()} color="success">
-              <CheckCircle />
-            </IconButton>
-          </Tooltip>
-        </Stack>
-      </Stack>
-    </Box>
+      <Button
+        onClick={() => applyChanges()}
+        color="success"
+        variant="contained"
+      >
+        Add
+      </Button>
+    </Stack>
   );
 }

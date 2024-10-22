@@ -165,7 +165,21 @@ export function JobDataTable() {
     rowsPerPage,
   );
 
+  const dataHeader = data?.headers;
   const results = data?.data || [];
+
+  // Parse the headers to get the first item, last item and number of items
+  const contentRange = dataHeader?.get("content-range");
+  let totalJobs = 0;
+
+  if (contentRange) {
+    const match = contentRange.match(/jobs (\d+)-(\d+)\/(\d+)/);
+    if (match) {
+      totalJobs = parseInt(match[3]);
+    }
+  } else if (results) {
+    totalJobs = results.length;
+  }
 
   const clearSelected = () => setSelected([]);
 
@@ -343,6 +357,7 @@ export function JobDataTable() {
         setPage={setPage}
         rowsPerPage={rowsPerPage}
         setRowsPerPage={setRowsPerPage}
+        totalRows={totalJobs}
         selected={selected}
         setSelected={setSelected}
         searchBody={searchBody}

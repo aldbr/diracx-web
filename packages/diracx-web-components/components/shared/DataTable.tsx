@@ -220,6 +220,8 @@ interface DataTableProps<T extends Record<string, unknown>> {
   rowsPerPage: number;
   /** The function to call when the rows per page change */
   setRowsPerPage: React.Dispatch<React.SetStateAction<number>>;
+  /** The total number of rows */
+  totalRows: number;
   /** The selected rows */
   selected: readonly number[];
   /** The function to call when the selected rows change */
@@ -266,6 +268,7 @@ export function DataTable<T extends Record<string, unknown>>(
     setPage,
     rowsPerPage,
     setRowsPerPage,
+    totalRows,
     selected,
     setSelected,
     searchBody,
@@ -738,7 +741,7 @@ export function DataTable<T extends Record<string, unknown>>(
         <TablePagination
           rowsPerPageOptions={[25, 50, 100, 500, 1000]}
           component="div"
-          count={rows.length}
+          count={totalRows}
           showFirstButton
           showLastButton
           rowsPerPage={rowsPerPage}
