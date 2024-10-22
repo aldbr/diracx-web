@@ -359,6 +359,17 @@ export function DataTable<T extends Record<string, unknown>>(
     updateGroupFilters(filters);
   };
 
+  const handleRemoveAllFilters = React.useCallback(() => {
+    setSearchBody({ search: [] });
+    setPage(0);
+    setAppliedFilters([]);
+
+    // Update the filters in the URL
+    updateFiltersAndUrl([]);
+    // Update the filters in the groups
+    updateGroupFilters([]);
+  }, [setFilters]);
+
   const DashboardItem = React.useMemo(
     () =>
       userDashboard
@@ -519,6 +530,7 @@ export function DataTable<T extends Record<string, unknown>>(
           setFilters={setFilters}
           appliedFilters={appliedFilters}
           handleApplyFilters={handleApplyFilters}
+          handleClearFilters={handleRemoveAllFilters}
         />
         <Box sx={{ width: "100%", p: 1 }} data-testid="skeleton">
           <Skeleton
@@ -542,6 +554,7 @@ export function DataTable<T extends Record<string, unknown>>(
           setFilters={setFilters}
           appliedFilters={appliedFilters}
           handleApplyFilters={handleApplyFilters}
+          handleClearFilters={handleRemoveAllFilters}
         />
         <Box sx={{ width: "100%", marginTop: 2 }}>
           <Alert severity="error">
@@ -562,6 +575,7 @@ export function DataTable<T extends Record<string, unknown>>(
           setFilters={setFilters}
           appliedFilters={appliedFilters}
           handleApplyFilters={handleApplyFilters}
+          handleClearFilters={handleRemoveAllFilters}
         />
         <Box sx={{ width: "100%", marginTop: 2 }}>
           <Alert severity="info">
@@ -587,6 +601,7 @@ export function DataTable<T extends Record<string, unknown>>(
         setFilters={setFilters}
         appliedFilters={appliedFilters}
         handleApplyFilters={handleApplyFilters}
+        handleClearFilters={handleRemoveAllFilters}
       />
 
       <Paper

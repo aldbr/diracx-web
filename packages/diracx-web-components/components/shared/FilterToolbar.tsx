@@ -27,6 +27,8 @@ interface FilterToolbarProps<T extends Record<string, unknown>> {
   appliedFilters: InternalFilter[];
   /** The function to apply the filters */
   handleApplyFilters: () => void;
+  /** The function to remove all filters */
+  handleClearFilters: () => void;
 }
 
 /**
@@ -37,8 +39,14 @@ interface FilterToolbarProps<T extends Record<string, unknown>> {
 export function FilterToolbar<T extends Record<string, unknown>>(
   props: FilterToolbarProps<T>,
 ) {
-  const { columns, filters, setFilters, appliedFilters, handleApplyFilters } =
-    props;
+  const {
+    columns,
+    filters,
+    setFilters,
+    appliedFilters,
+    handleApplyFilters,
+    handleClearFilters,
+  } = props;
   const [anchorEl, setAnchorEl] = React.useState<HTMLElement | null>(null);
   const [selectedFilter, setSelectedFilter] =
     React.useState<InternalFilter | null>(null);
@@ -57,10 +65,6 @@ export function FilterToolbar<T extends Record<string, unknown>>(
     setSelectedFilter(newFilter);
     setAnchorEl(addFilterButtonRef.current);
   }, [setSelectedFilter, setAnchorEl]);
-
-  const handleRemoveAllFilters = React.useCallback(() => {
-    setFilters([]);
-  }, [setFilters]);
 
   const handleFilterChange = (index: number, newFilter: InternalFilter) => {
     const updatedFilters = filters.map((filter, i) =>
@@ -132,7 +136,7 @@ export function FilterToolbar<T extends Record<string, unknown>>(
           case "c":
             event.preventDefault();
             event.stopPropagation();
-            handleRemoveAllFilters();
+            handleClearFilters();
             break;
           default:
             break;
@@ -150,7 +154,7 @@ export function FilterToolbar<T extends Record<string, unknown>>(
     return () => {
       window.removeEventListener("keydown", debouncedHandleKeyPress);
     };
-  }, [handleAddFilter, handleApplyFilters, handleRemoveAllFilters]);
+  }, [handleAddFilter, handleApplyFilters, handleClearFilters]);
 
   return (
     <>
@@ -184,7 +188,7 @@ export function FilterToolbar<T extends Record<string, unknown>>(
             <Button
               variant="text"
               startIcon={<Delete />}
-              onClick={handleRemoveAllFilters}
+              onClick={handleClearFilters}
               disabled={filters.length === 0}
             >
               <span>Clear all filters</span>
