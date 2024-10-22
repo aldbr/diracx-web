@@ -16,14 +16,16 @@ import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 import Tooltip from "@mui/material/Tooltip";
 import IconButton from "@mui/material/IconButton";
-import { FormatListBulleted } from "@mui/icons-material";
+import { FormatListBulleted, Visibility } from "@mui/icons-material";
 import {
   Alert,
   Menu,
   MenuItem,
+  Popover,
   Skeleton,
   Snackbar,
   Stack,
+  Switch,
 } from "@mui/material";
 import { cyan } from "@mui/material/colors";
 import { TableComponents, TableVirtuoso } from "react-virtuoso";
@@ -32,6 +34,7 @@ import {
   Cell,
   flexRender,
   getCoreRowModel,
+  Table as TanstackTable,
   useReactTable,
 } from "@tanstack/react-table";
 import { FilterToolbar } from "./FilterToolbar";
@@ -55,8 +58,9 @@ export interface MenuItem {
  * @property {number[]} selectedIds - the ids of the selected rows
  * @property {function} clearSelected - the function to call when the selected rows are cleared
  */
-interface DataTableToolbarProps {
+interface DataTableToolbarProps<T extends Record<string, unknown>> {
   title: string;
+  table: TanstackTable<T>;
   numSelected: number;
   selectedIds: readonly number[];
   toolbarComponents: JSX.Element;
@@ -66,9 +70,23 @@ interface DataTableToolbarProps {
  * Data table toolbar component
  * @param {DataTableToolbarProps} props - the props for the component
  */
-function DataTableToolbar(props: DataTableToolbarProps) {
-  const { title, numSelected, selectedIds, toolbarComponents } = props;
+function DataTableToolbar<T extends Record<string, unknown>>(
+  props: DataTableToolbarProps<T>,
+) {
+  const { title, table, numSelected, selectedIds, toolbarComponents } = props;
   const [snackbarOpen, setSnackbarOpen] = React.useState(false);
+  const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+
+  const handleVisibilityClick = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handlePopoverClose = () => {
+    setAnchorEl(null);
+  };
+
+  const open = Boolean(anchorEl);
+  const id = open ? "simple-popover" : undefined;
 
   /**
    * Handle the copy of the selected IDs
@@ -131,7 +149,43 @@ function DataTableToolbar(props: DataTableToolbarProps) {
           {toolbarComponents}
         </Stack>
       ) : (
-        <></>
+        <Box>
+          <Toolbar>
+            <IconButton onClick={handleVisibilityClick}>
+              <Visibility />
+            </IconButton>
+
+            <Popover
+              id={id}
+              open={open}
+              anchorEl={anchorEl}
+              onClose={handlePopoverClose}
+              anchorOrigin={{
+                vertical: "bottom",
+                horizontal: "left",
+              }}
+            >
+              <Box sx={{ p: 2 }}>
+                <Stack direction="column" spacing={2}>
+                  {table.getAllLeafColumns().map((column) => (
+                    <Stack
+                      key={column.id}
+                      direction="row"
+                      alignItems="center"
+                      spacing={1}
+                    >
+                      <Switch
+                        checked={column.getIsVisible()}
+                        onChange={column.getToggleVisibilityHandler()}
+                      />
+                      <Typography>{String(column.columnDef.header)}</Typography>
+                    </Stack>
+                  ))}
+                </Stack>
+              </Box>
+            </Popover>
+          </Toolbar>
+        </Box>
       )}
     </Toolbar>
   );
@@ -232,8 +286,13 @@ export function DataTable<T extends Record<string, unknown>>(
     mouseY: number | null;
     id: number | null;
   }>({ mouseX: null, mouseY: null, id: null });
+
+  // State for the search parameters
   const { getParam, setParam } = useSearchParamsUtils();
   const appId = getParam("appId");
+
+  // Add columnVisibility state
+  const [columnVisibility, setColumnVisibility] = React.useState({});
 
   // State for filters
   const [filters, setFilters] = React.useState<InternalFilter[]>([]);
@@ -402,6 +461,10 @@ export function DataTable<T extends Record<string, unknown>>(
   const table = useReactTable({
     data: rows,
     columns,
+    state: {
+      columnVisibility,
+    },
+    onColumnVisibilityChange: setColumnVisibility,
     getCoreRowModel: getCoreRowModel(),
     enableColumnResizing: true,
     columnResizeMode: "onChange",
@@ -536,6 +599,7 @@ export function DataTable<T extends Record<string, unknown>>(
       >
         <DataTableToolbar
           title={title}
+          table={table}
           numSelected={selected.length}
           selectedIds={selected}
           toolbarComponents={toolbarComponents}

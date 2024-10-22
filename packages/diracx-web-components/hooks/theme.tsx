@@ -1,4 +1,4 @@
-import { PaletteMode } from "@mui/material";
+import { alpha, PaletteMode } from "@mui/material";
 import { cyan, grey, lightGreen } from "@mui/material/colors";
 import {
   createTheme,
@@ -197,6 +197,21 @@ export const useMUITheme = () => {
           },
           "&.MuiCheckbox-indeterminate": {
             color: secondary,
+          },
+        },
+      },
+    },
+    MuiSwitch: {
+      styleOverrides: {
+        root: {
+          "& .MuiSwitch-switchBase.Mui-checked": {
+            color: secondary,
+            "&:hover": {
+              backgroundColor: alpha(secondary, 0.2),
+            },
+          },
+          "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": {
+            backgroundColor: secondary,
           },
         },
       },
