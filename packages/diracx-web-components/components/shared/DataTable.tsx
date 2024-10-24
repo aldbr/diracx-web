@@ -27,21 +27,14 @@ import {
   Stack,
   Switch,
 } from "@mui/material";
-import { cyan } from "@mui/material/colors";
-import { TableComponents, TableVirtuoso } from "react-virtuoso";
-import {
-  AccessorKeyColumnDef,
-  Cell,
-  flexRender,
-  getCoreRowModel,
-  Table as TanstackTable,
-  useReactTable,
-} from "@tanstack/react-table";
+import { flexRender, Table as TanstackTable } from "@tanstack/react-table";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import { FilterToolbar } from "./FilterToolbar";
 import { InternalFilter } from "@/types/Filter";
 import { useSearchParamsUtils } from "@/hooks/searchParamsUtils";
 import { ApplicationsContext } from "@/contexts/ApplicationsProvider";
 import { DashboardGroup, SearchBody } from "@/types";
+import { useMUITheme } from "@/hooks/theme";
 
 /**
  * Menu item
@@ -110,7 +103,10 @@ function DataTableToolbar<T extends Record<string, unknown>>(
       sx={{
         ...(numSelected > 0 && {
           bgcolor: (theme) =>
-            alpha(cyan[500], theme.palette.action.activatedOpacity),
+            alpha(
+              theme.palette.secondary.main,
+              theme.palette.action.activatedOpacity,
+            ),
         }),
       }}
     >
@@ -212,14 +208,8 @@ function DataTableToolbar<T extends Record<string, unknown>>(
 interface DataTableProps<T extends Record<string, unknown>> {
   /** The title of the table */
   title: string;
-  /** The current page */
-  page: number;
-  /** The function to call when the page changes */
-  setPage: React.Dispatch<React.SetStateAction<number>>;
-  /** The number of rows per page */
-  rowsPerPage: number;
-  /** The function to call when the rows per page change */
-  setRowsPerPage: React.Dispatch<React.SetStateAction<number>>;
+  /** The table */
+  table: TanstackTable<T>;
   /** The total number of rows */
   totalRows: number;
   /** The selected rows */
@@ -230,14 +220,6 @@ interface DataTableProps<T extends Record<string, unknown>> {
   searchBody: SearchBody;
   /** The function to call when the search body changes */
   setSearchBody: React.Dispatch<React.SetStateAction<SearchBody>>;
-  /** The columns of the table */
-  columns: Array<
-    | AccessorKeyColumnDef<T, number>
-    | AccessorKeyColumnDef<T, string>
-    | AccessorKeyColumnDef<T, Date>
-  >;
-  /** The rows of the table */
-  rows: T[];
   /** The error message */
   error: string | null;
   /** Whether the table is validating */
@@ -264,17 +246,12 @@ export function DataTable<T extends Record<string, unknown>>(
 ) {
   const {
     title,
-    page,
-    setPage,
-    rowsPerPage,
-    setRowsPerPage,
+    table,
     totalRows,
     selected,
     setSelected,
     searchBody,
     setSearchBody,
-    columns,
-    rows,
     error,
     isLoading,
     isValidating,
@@ -283,6 +260,7 @@ export function DataTable<T extends Record<string, unknown>>(
     toolbarComponents,
     menuItems,
   } = props;
+  const theme = useMUITheme();
   // State for the context menu
   const [contextMenu, setContextMenu] = React.useState<{
     mouseX: number | null;
@@ -293,9 +271,6 @@ export function DataTable<T extends Record<string, unknown>>(
   // State for the search parameters
   const { getParam, setParam } = useSearchParamsUtils();
   const appId = getParam("appId");
-
-  // Add columnVisibility state
-  const [columnVisibility, setColumnVisibility] = React.useState({});
 
   // State for filters
   const [filters, setFilters] = React.useState<InternalFilter[]>([]);
@@ -316,6 +291,7 @@ export function DataTable<T extends Record<string, unknown>>(
     [setParam],
   );
 
+  // State for the user dashboard
   const [userDashboard, setUserDashboard] =
     React.useContext(ApplicationsContext);
   const updateGroupFilters = React.useCallback(
@@ -353,23 +329,19 @@ export function DataTable<T extends Record<string, unknown>>(
       values: filter.values,
     }));
     setSearchBody({ search: jsonFilters });
-    setPage(0);
+    table.setPageIndex(0);
     setAppliedFilters(filters);
 
-    // Update the filters in the URL
     updateFiltersAndUrl(filters);
-    // Update the filters in the groups
     updateGroupFilters(filters);
   };
 
   const handleRemoveAllFilters = React.useCallback(() => {
     setSearchBody({ search: [] });
-    setPage(0);
+    table.setPageIndex(0);
     setAppliedFilters([]);
 
-    // Update the filters in the URL
     updateFiltersAndUrl([]);
-    // Update the filters in the groups
     updateGroupFilters([]);
   }, [setFilters]);
 
@@ -416,11 +388,13 @@ export function DataTable<T extends Record<string, unknown>>(
   // Manage selection
   const handleSelectAllClick = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.checked) {
-      const newSelected = rows.map((n: T) => n[rowIdentifier] as number);
+      const newSelected = table
+        .getRowModel()
+        .rows.map((row) => row.getValue(String(rowIdentifier)) as number);
       setSelected(newSelected);
-      return;
+    } else {
+      setSelected([]);
     }
-    setSelected([]);
   };
 
   const handleClick = (_event: React.MouseEvent<unknown>, id: number) => {
@@ -445,14 +419,14 @@ export function DataTable<T extends Record<string, unknown>>(
 
   // Manage pagination
   const handleChangePage = (_event: unknown, newPage: number) => {
-    setPage(newPage);
+    table.setPageIndex(newPage);
   };
 
   const handleChangeRowsPerPage = (
     event: React.ChangeEvent<HTMLInputElement>,
   ) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
+    table.setPageSize(Number(event.target.value));
+    table.setPageIndex(0);
   };
 
   const isSelected = (name: number) => selected.indexOf(name) !== -1;
@@ -471,64 +445,22 @@ export function DataTable<T extends Record<string, unknown>>(
     setContextMenu({ mouseX: null, mouseY: null, id: null });
   };
 
-  // TanStack table components: https://tanstack.com/
-  const table = useReactTable({
-    data: rows,
-    columns,
-    state: {
-      columnVisibility,
-    },
-    onColumnVisibilityChange: setColumnVisibility,
-    getCoreRowModel: getCoreRowModel(),
-    enableColumnResizing: true,
-    columnResizeMode: "onChange",
+  // Virtualizer
+  const tableContainerRef = React.useRef<HTMLDivElement>(null);
+
+  const rowVirtualizer = useVirtualizer({
+    count: table.getRowModel().rows.length,
+    getScrollElement: () => tableContainerRef.current,
+    estimateSize: () => 39,
+    overscan: 5,
   });
-
-  // Virtuoso table components: https://virtuoso.dev/
-  // Used to render large tables with virtualization, which improves performance
-  interface TableContextProps {
-    rowIdentifier: keyof T;
-    handleClick: (event: React.MouseEvent, id: number) => void;
-    handleContextMenu: (event: React.MouseEvent, id: number) => void;
-    isSelected: (id: number) => boolean;
-    isMobile: boolean;
-  }
-
-  const VirtuosoTableComponents: TableComponents<T, TableContextProps> = {
-    Scroller: React.forwardRef<HTMLDivElement>(function Scroller(props, ref) {
-      return <TableContainer {...props} ref={ref} />;
-    }),
-    Table: (props) => (
-      <Table
-        {...props}
-        sx={{
-          borderCollapse: "separate",
-          tableLayout: "fixed",
-          minWidth: "100%",
-        }}
-        aria-labelledby="tableTitle"
-        size="small"
-      />
-    ),
-    TableHead: React.forwardRef<HTMLTableSectionElement>(
-      function TableHeadRef(props, ref) {
-        return <TableHead {...props} ref={ref} />;
-      },
-    ),
-    TableRow: (props) => <TableRow {...props} />,
-    TableBody: React.forwardRef<HTMLTableSectionElement>(
-      function TableBodyRef(props, ref) {
-        return <TableBody {...props} ref={ref} />;
-      },
-    ),
-  };
 
   // Wait for the data to load
   if (isValidating || isLoading) {
     return (
       <>
         <FilterToolbar
-          columns={columns}
+          columns={table.getAllColumns()}
           filters={filters}
           setFilters={setFilters}
           appliedFilters={appliedFilters}
@@ -552,7 +484,7 @@ export function DataTable<T extends Record<string, unknown>>(
     return (
       <>
         <FilterToolbar
-          columns={columns}
+          columns={table.getAllColumns()}
           filters={filters}
           setFilters={setFilters}
           appliedFilters={appliedFilters}
@@ -568,12 +500,14 @@ export function DataTable<T extends Record<string, unknown>>(
     );
   }
 
+  const rows = table.getRowModel().rows;
+
   // Handle no data
   if (!rows || rows.length === 0) {
     return (
       <>
         <FilterToolbar
-          columns={columns}
+          columns={table.getAllColumns()}
           filters={filters}
           setFilters={setFilters}
           appliedFilters={appliedFilters}
@@ -589,6 +523,8 @@ export function DataTable<T extends Record<string, unknown>>(
     );
   }
 
+  const checkboxWidth = 50;
+
   return (
     <Box
       sx={{
@@ -599,7 +535,7 @@ export function DataTable<T extends Record<string, unknown>>(
       }}
     >
       <FilterToolbar
-        columns={columns}
+        columns={table.getAllColumns()}
         filters={filters}
         setFilters={setFilters}
         appliedFilters={appliedFilters}
@@ -622,133 +558,202 @@ export function DataTable<T extends Record<string, unknown>>(
           selectedIds={selected}
           toolbarComponents={toolbarComponents}
         />
-        <TableContainer sx={{ flexGrow: 1, overflow: "auto" }}>
-          <TableVirtuoso<T, TableContextProps>
+        <TableContainer
+          sx={{ flexGrow: 1, overflow: "auto" }}
+          ref={tableContainerRef}
+        >
+          <Table
+            size="small"
             style={{ flexGrow: 1, width: "100%", minHeight: "100px" }}
-            data={rows}
-            components={VirtuosoTableComponents}
-            context={{
-              rowIdentifier,
-              handleClick,
-              handleContextMenu,
-              isSelected,
-              isMobile,
-            }}
-            fixedHeaderContent={() => (
-              <TableRow>
-                <TableCell padding="checkbox">
-                  <Checkbox
-                    color="primary"
-                    indeterminate={
-                      selected.length > 0 && selected.length < rows.length
-                    }
-                    checked={rows.length > 0 && selected.length === rows.length}
-                    onChange={handleSelectAllClick}
-                    inputProps={{ "aria-label": "select all items" }}
-                  />
-                </TableCell>
-                {table.getHeaderGroups().map((headerGroup) =>
-                  headerGroup.headers.map((header) => (
+          >
+            <TableHead sx={{ position: "sticky", zIndex: 3, top: 0 }}>
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id}>
+                  <TableCell
+                    padding="checkbox"
+                    style={{
+                      position: "sticky",
+                      left: 0,
+                      zIndex: 2,
+                      width: checkboxWidth,
+                      backgroundColor: theme.palette.background.default,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    <Checkbox
+                      indeterminate={
+                        table.getIsSomeRowsSelected() &&
+                        !table.getIsAllRowsSelected()
+                      }
+                      checked={table.getIsAllRowsSelected()}
+                      onChange={handleSelectAllClick}
+                    />
+                  </TableCell>
+                  {headerGroup.headers.map((header) => (
                     <TableCell
                       key={header.id}
                       style={{
-                        width: header.getSize(),
-                        flexGrow: 1,
-                        position: "relative",
+                        position: header.column.getIsPinned()
+                          ? "sticky"
+                          : "relative",
+                        left:
+                          header.column.getIsPinned() === "left"
+                            ? checkboxWidth
+                            : undefined,
+                        right:
+                          header.column.getIsPinned() === "right"
+                            ? 0
+                            : undefined,
+                        zIndex: header.column.getIsPinned() ? 2 : 1,
+                        width: header.column.getSize(),
+                        backgroundColor: theme.palette.background.default,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
                       }}
                     >
-                      <TableSortLabel
-                        active={
-                          searchBody.sort &&
-                          searchBody.sort[0]?.parameter === header.id
-                        }
-                        direction={
-                          searchBody.sort &&
-                          searchBody.sort[0]?.direction === "asc"
-                            ? "asc"
-                            : "desc"
-                        }
-                        onClick={(event) => handleRequestSort(event, header.id)}
-                      >
-                        {flexRender(
-                          header.column.columnDef.header,
-                          header.getContext(),
-                        )}
-                      </TableSortLabel>
+                      {header.isPlaceholder ? null : (
+                        <TableSortLabel
+                          active={
+                            searchBody.sort &&
+                            searchBody.sort[0]?.parameter === header.id
+                          }
+                          direction={
+                            searchBody.sort &&
+                            searchBody.sort[0]?.direction === "asc"
+                              ? "asc"
+                              : "desc"
+                          }
+                          onClick={(event) =>
+                            handleRequestSort(event, header.id)
+                          }
+                        >
+                          {flexRender(
+                            header.column.columnDef.header,
+                            header.getContext(),
+                          )}
+                        </TableSortLabel>
+                      )}
                       {header.column.getCanResize() && (
                         <Box
                           sx={{
                             position: "absolute",
-                            right: 0,
+                            right: "0%",
                             top: 0,
                             height: "100%",
-                            width: "5px",
-                            zIndex: 1,
+                            width: "10px",
                             cursor: "col-resize",
+                            userSelect: "none",
+                            touchAction: "none",
+                            zIndex: 3,
                           }}
                           onMouseDown={header.getResizeHandler()}
                           onTouchStart={header.getResizeHandler()}
                         />
                       )}
                     </TableCell>
-                  )),
-                )}
-              </TableRow>
-            )}
-            itemContent={(index: number, rowData: T) => {
-              const row = table.getRowModel().rows[index];
-              const itemId = rowData[rowIdentifier] as number;
-              const isItemSelected = isSelected(itemId);
-              const labelId = `enhanced-table-checkbox-${index}`;
-
-              return (
-                <>
-                  <TableCell padding="checkbox">
-                    <Checkbox
-                      color="primary"
-                      checked={isItemSelected}
-                      inputProps={{ "aria-labelledby": labelId }}
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        handleClick(event, itemId);
-                      }}
-                    />
-                  </TableCell>
-                  {row.getVisibleCells().map((cell: Cell<T, unknown>) => (
+                  ))}
+                </TableRow>
+              ))}
+            </TableHead>
+            <TableBody>
+              {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+                const row = table.getRowModel().rows[virtualRow.index];
+                return (
+                  <TableRow
+                    key={row.id}
+                    onClick={(event) =>
+                      handleClick(
+                        event,
+                        row.getValue(String(rowIdentifier)) as number,
+                      )
+                    }
+                    style={{
+                      cursor: "context-menu",
+                    }}
+                    onContextMenu={(event) =>
+                      handleContextMenu(
+                        event,
+                        row.getValue(String(rowIdentifier)) as number,
+                      )
+                    }
+                  >
                     <TableCell
-                      key={cell.id}
-                      onContextMenu={(event) =>
-                        handleContextMenu(event, itemId)
-                      }
+                      padding="checkbox"
                       style={{
-                        width: cell.column.getSize(),
-                        minWidth: 50,
-                        maxWidth: 200,
-                        cursor: "context-menu",
+                        position: "sticky",
+                        left: 0,
+                        zIndex: 1,
+                        width: checkboxWidth,
+                        backgroundColor: theme.palette.background.default,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
                       }}
                     >
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext(),
-                      )}
+                      <Checkbox
+                        checked={isSelected(
+                          row.getValue(String(rowIdentifier)) as number,
+                        )}
+                        onClick={(event) =>
+                          handleClick(
+                            event,
+                            row.getValue(String(rowIdentifier)) as number,
+                          )
+                        }
+                      />
                     </TableCell>
-                  ))}
-                </>
-              );
-            }}
-          />
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell
+                        key={cell.id}
+                        style={{
+                          position: cell.column.getIsPinned()
+                            ? "sticky"
+                            : "static",
+                          left:
+                            cell.column.getIsPinned() === "left"
+                              ? checkboxWidth
+                              : undefined,
+                          right:
+                            cell.column.getIsPinned() === "right"
+                              ? 0
+                              : undefined,
+                          zIndex: cell.column.getIsPinned() ? 1 : 0,
+                          width: cell.column.getSize(),
+                          backgroundColor: cell.column.getIsPinned()
+                            ? theme.palette.background.default
+                            : undefined,
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext(),
+                        )}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
         </TableContainer>
         <TablePagination
-          rowsPerPageOptions={[25, 50, 100, 500, 1000]}
           component="div"
+          rowsPerPageOptions={[25, 50, 100, 500, 1000]}
           count={totalRows}
           showFirstButton
           showLastButton
-          rowsPerPage={rowsPerPage}
-          page={page}
+          rowsPerPage={table.getState().pagination.pageSize}
+          page={table.getState().pagination.pageIndex}
           onPageChange={handleChangePage}
           onRowsPerPageChange={handleChangeRowsPerPage}
           labelRowsPerPage={isMobile ? "" : "Rows per page"}
+          sx={{ flexShrink: 0 }}
         />
       </Paper>
       <Menu

@@ -3,7 +3,7 @@ import { FilterList, Delete, Send, Refresh } from "@mui/icons-material";
 import Chip from "@mui/material/Chip";
 import Button from "@mui/material/Button";
 import { Alert, Box, Popover, Stack, Tooltip } from "@mui/material";
-import { AccessorKeyColumnDef } from "@tanstack/react-table";
+import { Column } from "@tanstack/react-table";
 import { FilterForm } from "./FilterForm";
 import { InternalFilter } from "@/types/Filter";
 import "@/hooks/theme";
@@ -14,11 +14,7 @@ import "@/hooks/theme";
  */
 interface FilterToolbarProps<T extends Record<string, unknown>> {
   /** The columns of the data table */
-  columns: Array<
-    | AccessorKeyColumnDef<T, number>
-    | AccessorKeyColumnDef<T, string>
-    | AccessorKeyColumnDef<T, Date>
-  >;
+  columns: Column<T>[];
   /** The filters to apply */
   filters: InternalFilter[];
   /** The function to set the filters */
@@ -215,8 +211,8 @@ export function FilterToolbar<T extends Record<string, unknown>>(
             onDelete={() => {
               handleRemoveFilter(index);
             }}
-            color={isApplied(filter) ? "chipColor" : "default"}
             sx={{ m: 0.5 }}
+            color={isApplied(filter) ? "primary" : "default"}
           />
         ))}
 

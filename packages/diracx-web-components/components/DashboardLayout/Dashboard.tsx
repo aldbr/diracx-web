@@ -72,7 +72,7 @@ export default function Dashboard(props: DashboardProps) {
               }}
             >
               <div />
-              <Stack direction="row">
+              <Stack direction="row" spacing={1} alignItems="center">
                 <ThemeToggleButton />
                 <ProfileButton />
               </Stack>

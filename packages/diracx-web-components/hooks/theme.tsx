@@ -9,22 +9,6 @@ import {
 import { useContext } from "react";
 import { ThemeContext } from "@/contexts/ThemeProvider";
 
-declare module "@mui/material/styles" {
-  interface Palette {
-    chipColor: Palette["primary"];
-  }
-
-  interface PaletteOptions {
-    chipColor?: PaletteOptions["primary"];
-  }
-}
-
-declare module "@mui/material/Chip" {
-  interface ChipPropsColorOverrides {
-    chipColor: true;
-  }
-}
-
 /**
  * Custom hook to access the theme context
  * @returns the theme context
@@ -47,23 +31,24 @@ export const useTheme = () => {
 export const useMUITheme = () => {
   const { theme } = useTheme();
 
-  const primary = lightGreen[700];
-  const secondary = cyan[500];
-
-  const chipColor =
-    theme === "light" ? lighten(primary, 0.5) : darken(primary, 0.5);
+  const primaryColor = lightGreen[700];
+  const secondaryColor = cyan[500];
+  const primary =
+    theme === "light" ? lighten(primaryColor, 0.2) : darken(primaryColor, 0.2);
+  const secondary =
+    theme === "light"
+      ? lighten(secondaryColor, 0.2)
+      : darken(secondaryColor, 0.2);
 
   // Create a Material-UI theme based on the current mode
   const muiTheme = createTheme({
     palette: {
       mode: theme as PaletteMode,
       primary: {
-        main: "#ffffff",
+        main: primary,
       },
-      chipColor: {
-        main: chipColor,
-        contrastText:
-          getContrastRatio(chipColor, "#fff") > 4.5 ? "#fff" : "#111",
+      secondary: {
+        main: secondary,
       },
     },
   });
@@ -96,6 +81,14 @@ export const useMUITheme = () => {
         }
       }
     `,
+    },
+    MuiAppBar: {
+      styleOverrides: {
+        root: {
+          backgroundColor: muiTheme.palette.background.default,
+          color: theme === "light" ? "#000000" : "#ffffff",
+        },
+      },
     },
     MuiButton: {
       styleOverrides: {
@@ -224,6 +217,18 @@ export const useMUITheme = () => {
               muiTheme.palette.mode === "light"
                 ? lighten(grey[200], 0.2)
                 : darken(grey[800], 0.2),
+          },
+        },
+      },
+    },
+    MuiChip: {
+      styleOverrides: {
+        root: {
+          backgroundColor: primary,
+          color: getContrastRatio(primary, "#fff") > 4.5 ? "#fff" : "#111",
+          "&:hover": {
+            backgroundColor: secondary,
+            color: getContrastRatio(secondary, "#fff") > 1 ? "#fff" : "#111",
           },
         },
       },

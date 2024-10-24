@@ -28,7 +28,10 @@ import { useOidcAccessToken } from "@axa-fr/react-oidc";
 import { Delete, Clear, Replay } from "@mui/icons-material";
 import {
   createColumnHelper,
-  AccessorKeyColumnDef,
+  ColumnPinningState,
+  RowSelectionState,
+  useReactTable,
+  getCoreRowModel,
 } from "@tanstack/react-table";
 import { useOIDCContext } from "../../hooks/oidcConfiguration";
 import { DataTable, MenuItem } from "../shared/DataTable";
@@ -90,42 +93,29 @@ const columnHelper = createColumnHelper<Job>();
 /**
  * The head cells for the data grid (desktop version)
  */
-const headCells: Array<
-  | AccessorKeyColumnDef<Job, number>
-  | AccessorKeyColumnDef<Job, string>
-  | AccessorKeyColumnDef<Job, Date>
-> = [
+const columns = [
   columnHelper.accessor("JobID", {
     header: "ID",
-    minSize: 50,
-    size: 50,
-    maxSize: 75,
     meta: { type: "number" },
-  }) as AccessorKeyColumnDef<Job, number>,
+  }),
   columnHelper.accessor("JobName", {
     header: "Name",
-  }) as AccessorKeyColumnDef<Job, string>,
+  }),
   columnHelper.accessor("Site", {
     header: "Site",
-    minSize: 100,
-    size: 100,
-    maxSize: 150,
-  }) as AccessorKeyColumnDef<Job, string>,
+  }),
   columnHelper.accessor("Status", {
     header: "Status",
-    minSize: 125,
-    size: 125,
-    maxSize: 125,
     cell: (info) => renderStatusCell(info.getValue()),
     meta: { type: "category", values: Object.keys(statusColors).sort() },
-  }) as AccessorKeyColumnDef<Job, string>,
+  }),
   columnHelper.accessor("MinorStatus", {
     header: "Minor Status",
-  }) as AccessorKeyColumnDef<Job, string>,
+  }),
   columnHelper.accessor("SubmissionTime", {
     header: "Submission Time",
     meta: { type: "date" },
-  }) as AccessorKeyColumnDef<Job, Date>,
+  }),
 ];
 
 /**
@@ -136,17 +126,29 @@ export function JobDataTable() {
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const [selected, setSelected] = React.useState<readonly number[]>([]);
 
+  // Authentication
   const { configuration } = useOIDCContext();
   const { accessToken } = useOidcAccessToken(configuration?.scope);
+
+  // State for loading elements
   const [backdropOpen, setBackdropOpen] = React.useState(false);
   const [snackbarInfo, setSnackbarInfo] = React.useState({
     open: false,
     message: "",
     severity: "success",
   });
-  // State for pagination
-  const [page, setPage] = React.useState(0);
-  const [rowsPerPage, setRowsPerPage] = React.useState(25);
+
+  // States for table settings
+  const [columnVisibility, setColumnVisibility] = React.useState({});
+  const [columnPinning, setColumnPinning] = React.useState<ColumnPinningState>({
+    left: ["JobID"], // Pin JobID column by default
+  });
+  const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({});
+  const [pagination, setPagination] = React.useState({
+    pageIndex: 0,
+    pageSize: 25,
+  });
+
   // State for search body
   const [searchBody, setSearchBody] = React.useState<SearchBody>({
     sort: [{ parameter: "JobID", direction: "asc" }],
@@ -161,12 +163,12 @@ export function JobDataTable() {
   const { data, error, isLoading, isValidating } = useJobs(
     accessToken,
     searchBody,
-    page,
-    rowsPerPage,
+    pagination.pageIndex,
+    pagination.pageSize,
   );
 
   const dataHeader = data?.headers;
-  const results = data?.data || [];
+  const results = React.useMemo(() => data?.data || [], [data?.data]);
 
   // Parse the headers to get the first item, last item and number of items
   const contentRange = dataHeader?.get("content-range");
@@ -191,7 +193,12 @@ export function JobDataTable() {
     try {
       await deleteJobs(selectedIds, accessToken);
       setBackdropOpen(false);
-      refreshJobs(accessToken, searchBody, page, rowsPerPage);
+      refreshJobs(
+        accessToken,
+        searchBody,
+        pagination.pageIndex,
+        pagination.pageSize,
+      );
       clearSelected();
       setSnackbarInfo({
         open: true,
@@ -222,7 +229,12 @@ export function JobDataTable() {
     try {
       await killJobs(selectedIds, accessToken);
       setBackdropOpen(false);
-      refreshJobs(accessToken, searchBody, page, rowsPerPage);
+      refreshJobs(
+        accessToken,
+        searchBody,
+        pagination.pageIndex,
+        pagination.pageSize,
+      );
       clearSelected();
       setSnackbarInfo({
         open: true,
@@ -253,7 +265,12 @@ export function JobDataTable() {
     try {
       await rescheduleJobs(selectedIds, accessToken);
       setBackdropOpen(false);
-      refreshJobs(accessToken, searchBody, page, rowsPerPage);
+      refreshJobs(
+        accessToken,
+        searchBody,
+        pagination.pageIndex,
+        pagination.pageSize,
+      );
       clearSelected();
       setSnackbarInfo({
         open: true,
@@ -339,9 +356,31 @@ export function JobDataTable() {
   ];
 
   /**
+   * Table instance
+   */
+  const table = useReactTable({
+    data: results,
+    columns,
+    state: {
+      columnVisibility,
+      columnPinning,
+      rowSelection,
+      pagination,
+    },
+    onColumnVisibilityChange: setColumnVisibility,
+    onColumnPinningChange: setColumnPinning,
+    onRowSelectionChange: setRowSelection,
+    onPaginationChange: setPagination,
+    getCoreRowModel: getCoreRowModel(),
+    enablePinning: true,
+    enableColumnResizing: true,
+    columnResizeMode: "onChange",
+    manualPagination: true,
+  });
+
+  /**
    * The main component
    */
-
   return (
     <Box
       sx={{
@@ -353,17 +392,12 @@ export function JobDataTable() {
     >
       <DataTable<Job>
         title="List of Jobs"
-        page={page}
-        setPage={setPage}
-        rowsPerPage={rowsPerPage}
-        setRowsPerPage={setRowsPerPage}
+        table={table}
         totalRows={totalJobs}
         selected={selected}
         setSelected={setSelected}
         searchBody={searchBody}
         setSearchBody={setSearchBody}
-        columns={headCells}
-        rows={results}
         error={error}
         isLoading={isLoading}
         isValidating={isValidating}
