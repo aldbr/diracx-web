@@ -76,17 +76,22 @@ jobs:
     - uses: actions/setup-node@v6
       with:
         node-version-file: .nvmrc
+        cache: 'npm'
 
-    - name: Start Cypress
-      uses: cypress-io/github-action@v6
-      with:
-        browser: chrome
-        config: baseUrl=${{ env.DIRACX_URL }}
-        project: packages/diracx-web
+    - name: Install dependencies
+      run: npm ci
 
-    - name: Upload Cypress screenshots
+    - name: Install Playwright browser
+      run: npx playwright install --with-deps chromium
+
+    - name: Run Playwright tests
+      run: npm --prefix packages/diracx-web run test:headless
+
+    - name: Upload Playwright report
       if: failure()
       uses: actions/upload-artifact@v7
       with:
-        name: cypress-screenshots
-        path: packages/diracx-web/cypress/screenshots
+        name: playwright-report
+        path: |
+          packages/diracx-web/playwright-report
+          packages/diracx-web/test-results

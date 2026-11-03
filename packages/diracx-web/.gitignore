@@ -7,7 +7,9 @@
 
 # testing
 /coverage
-/cypress
+/test-results
+/playwright-report
+/blob-report
 
 # next.js
 /.next/
