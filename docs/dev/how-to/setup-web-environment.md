@@ -27,7 +27,7 @@ flowchart TD
  subgraph diracx-web-cmds["diracx-web package.json"]
         nextdev["next dev"]
         diracx-web:dev["dev"]
-        cypress["cypress"]
+        playwright["playwright test"]
         diracx-web:test["test"]
         next["next build"]
         diracx-web:build["build"]
@@ -45,7 +45,7 @@ flowchart TD
     lib:build --> tsup:build
     lib:storybook --> storybook
     diracx-web:dev -.-> nextdev
-    diracx-web:test -.-> cypress
+    diracx-web:test -.-> playwright
     diracx-web:build -.-> next
     user["Developer"] --> root-cmds
     root:test:lib -- calls --> lib:test
@@ -55,7 +55,7 @@ flowchart TD
     root:build -- calls --> diracx-web:build
     root:test -- calls --> diracx-web:test
     root:test ~~~ gubbins-cmds["**extensions[gubbins] package.json**"]
-    cypress -- uses --> diracx-src
+    playwright -- uses --> diracx-src
     nextdev -- uses --> diracx-src
     nextdev -. watches(next config) .-> lib-src
     next -- builds --> diracx-out
@@ -81,7 +81,7 @@ flowchart TD
      lib:storybook:::Ash
      nextdev:::Rose
      diracx-web:dev:::Ash
-     cypress:::Rose
+     playwright:::Rose
      diracx-web:test:::Ash
      next:::Rose
      diracx-web:build:::Ash
@@ -151,12 +151,14 @@ diracx-charts/run_demo.sh ./diracx-web [./diracx]
 npm run test:diracx-web-components
 ```
 
-End-to-end tests are launched through [Cypress](https://www.cypress.io/) such as:
+End-to-end tests are launched through [Playwright](https://playwright.dev/) such as:
 
 ```bash
 # diracx-charts/run_demo.sh is running
 export DIRACX_URL=<diracX installation>
-npm run --prefix packages/diracx-web test
+npx playwright install chromium  # once, to download the browser
+npm run --prefix packages/diracx-web test           # interactive UI mode
+npm run --prefix packages/diracx-web test:headless  # as in the CI
 ```
 
 ## Documenting

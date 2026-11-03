@@ -18,7 +18,7 @@ flowchart TD
  subgraph gubbins-cmds["extensions[gubbins] package.json"]
         nextdev["next dev"]
         gubbins:dev["dev"]
-        cypress["cypress"]
+        playwright["playwright test"]
         gubbins:test["test"]
         next["next build"]
         gubbins:build["build"]
@@ -33,18 +33,18 @@ flowchart TD
   end
     user["Developer"] --> root-cmds
     gubbins:dev -.-> nextdev
-    gubbins:test -.-> cypress
+    gubbins:test -.-> playwright
     gubbins:build -.-> next
     root:dev -- calls --> gubbins:dev
     root:dev ----x diracx-web-cmds["diracx-web package.json"]
-    cypress -- uses --> diracx-src
+    playwright -- uses --> diracx-src
     nextdev -- uses --> diracx-src
     next -- builds --> diracx-out
     next -. needs .-> lib-out
      root:dev:::Ash
      nextdev:::Rose
      gubbins:dev:::Ash
-     cypress:::Rose
+     playwright:::Rose
      gubbins:test:::Ash
      next:::Rose
      gubbins:build:::Ash

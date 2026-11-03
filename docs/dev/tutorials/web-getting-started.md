@@ -59,10 +59,11 @@ The repository is a monorepo with three main packages:
 npm run test:diracx-web-components
 ```
 
-**End-to-end tests** (Cypress — requires a running DiracX backend):
+**End-to-end tests** (Playwright — requires a running DiracX backend):
 
 ```bash
 export DIRACX_URL=<diracx-backend-url>
+npx playwright install chromium  # once, to download the browser
 npm run --prefix packages/diracx-web test
 ```
 

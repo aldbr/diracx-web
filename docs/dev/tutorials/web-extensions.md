@@ -64,7 +64,7 @@ You can either create a new repository or start from this one to build your Dira
    npm install @dirac-grid/diracx-web-components
    ```
 
-   To include additional dependencies in your project, such as `cypress` for end-to-end tests, you can follow these steps:
+   To include additional dependencies in your project, such as `@playwright/test` for end-to-end tests, you can follow these steps:
 
    Run the following command to install the desired dependency:
 
@@ -76,15 +76,15 @@ You can either create a new repository or start from this one to build your Dira
 
    Replace `<dependency-name>` with the name of the dependency you want to install.
 
-   For example, to install `cypress`, run:
+   For example, to install `@playwright/test`, run:
 
    ```bash
-   npm install cypress -D
+   npm install @playwright/test -D
    ```
 
    Make sure to consult the documentation of each dependency for further instructions on how to use them in your project.
 
-   For `cypress`, you can refer to the [Cypress documentation](https://docs.cypress.io/guides/overview/why-cypress.html) for detailed usage instructions.
+   For `@playwright/test`, you can refer to the [Playwright documentation](https://playwright.dev/docs/intro) for detailed usage instructions.
 
 3. **Add the OIDC postinstall script** to your `package.json` file to copy necessary service worker files:
 
@@ -222,7 +222,7 @@ It can be automatically deployed using CI/CD tools like GitHub Actions, GitLab C
 
 - **Testing**:
   - **Component Testing**: Write tests for your components to ensure they work as expected. Use [Vitest](https://vitest.dev/) for unit testing and snapshot testing of your React components.
-  - **Application Testing**: Use [Cypress](https://www.cypress.io/) for end-to-end testing to simulate real user interactions and ensure your application behaves correctly.
+  - **Application Testing**: Use [Playwright](https://playwright.dev/) for end-to-end testing to simulate real user interactions and ensure your application behaves correctly.
   - **Test Coverage**: Maintain good test coverage to ensure that your critical features are well-protected during updates. Tools like Vitest provide [coverage reports](https://vitest.dev/guide/coverage) that help you identify untested parts of your code.
 
 - **Accessibility**: Make your extension accessible to all users. Use semantic HTML, ARIA attributes, and test your extension with different screen sizes and assistive technologies.

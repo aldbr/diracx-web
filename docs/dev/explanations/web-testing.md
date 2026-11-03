@@ -32,13 +32,15 @@ Tests live in `packages/diracx-web-components/test/`.
 
 **What to test**: That stories render without errors, that key elements are present in the DOM, and that basic interactions (clicks, form inputs) produce the expected results.
 
-### End-to-end tests (Cypress)
+### End-to-end tests (Playwright)
 
 E2E tests run in a real browser against a running DiracX backend. They verify that essential user workflows work correctly across the full stack — authentication, navigation, data display, and user actions.
 
 ```bash
 export DIRACX_URL=<diracx-backend-url>
-npm run --prefix packages/diracx-web test
+npx playwright install chromium  # once, to download the browser
+npm run --prefix packages/diracx-web test           # interactive UI mode
+npm run --prefix packages/diracx-web test:headless  # as in the CI
 ```
 
 Tests live in `packages/diracx-web/test/e2e/`.
@@ -51,7 +53,7 @@ Tests live in `packages/diracx-web/test/e2e/`.
 |-------|---------|-------|------------|
 | Storybook | Document components for extension developers | Manual | Mocks only |
 | Vitest | Verify stories render and behave correctly | Fast | Storybook stories |
-| Cypress | Verify essential user workflows | Slow | Running backend |
+| Playwright | Verify essential user workflows | Slow | Running backend |
 
 ## Guidelines
 

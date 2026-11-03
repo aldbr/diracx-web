@@ -39,7 +39,7 @@ The vanilla DiracX web interface:
 - **Framework**: [Next.js](https://nextjs.org/) with App Router
 - **Output**: Static export (`output: "export"`)
 - **Authentication**: [@axa-fr/react-oidc](https://github.com/AxaFrance/oidc-client)
-- **Testing**: [Cypress](https://www.cypress.io/) for end-to-end tests
+- **Testing**: [Playwright](https://playwright.dev/) for end-to-end tests
 - **Serving**: Nginx in production (Docker image)
 
 ### extensions (gubbins)
