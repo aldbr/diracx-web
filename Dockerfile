@@ -18,6 +18,13 @@ RUN NEXT_TELEMETRY_DISABLED=1 npm run build
 
 # Stage 2: Copy the website from the previous container to a Nginx container
 FROM nginxinc/nginx-unprivileged:1.31-alpine
+# Without these, the image inherits the nginx base image labels, and Renovate
+# would link nginx release notes into the diracx-web version bump PRs.
+LABEL org.opencontainers.image.source="https://github.com/DIRACGrid/diracx-web" \
+      org.opencontainers.image.title="diracx-web" \
+      org.opencontainers.image.description="DiracX web interface" \
+      org.opencontainers.image.licenses="GPL-3.0-only" \
+      org.opencontainers.image.url="https://github.com/DIRACGrid/diracx-web"
 EXPOSE 8080
 COPY --from=build /app/out /usr/share/nginx/html
 COPY ./config/nginx/default.conf /etc/nginx/conf.d/default.conf
